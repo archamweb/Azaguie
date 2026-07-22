@@ -533,7 +533,7 @@ function reinitialiser(){
    ============================================================ */
 function ouvrirModale(html){ document.getElementById("modale").innerHTML = html; document.getElementById("voile").classList.add("ouvert"); }
 function fermerModale(){ document.getElementById("voile").classList.remove("ouvert"); }
-document.getElementById("voile").addEventListener("click", e=>{ if(e.target.id==="voile") fermerModale(); });
+/* fermeture uniquement par les boutons de la fenêtre (pas au clic extérieur) */
 
 function optionsPostes(sel){
   return ETAT.postes.map(p=>`<option value="${esc(p.code)}" ${p.code===sel?"selected":""}>${esc(p.code)} — ${esc(p.libelle)}</option>`).join("");
