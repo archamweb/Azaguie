@@ -423,30 +423,68 @@ function vueListe(statuts, titre){
 function trier(t){ if(filtre.tri===t) filtre.sens*=-1; else {filtre.tri=t; filtre.sens=1;} voir(vueActive); }
 
 function vueActeurs(){
-  const grp = {};
-  for(const d of ETAT.demandes){
-    const b = d.beneficiaire || "—";
-    grp[b] = grp[b] || {receptionne:0, paye:0, retenue:0, restitue:0, reste:0, demandes:0, prog:false};
-    grp[b].demandes++;
-    grp[b].paye += totalPaye(d);
-    if(d.nature==="progressive"){
-      grp[b].prog = true;
-      grp[b].receptionne += totalReceptionne(d);
-      grp[b].retenue += retenue(d);
-      grp[b].restitue += Number(d.retenueRestituee)||0;
-      grp[b].reste += resteAPayer(d);
-    }
-  }
-  const noms = Object.keys(grp).sort((a,b)=>grp[b].paye-grp[a].paye);
-  return `<h2>Point des acteurs (prestataires, fournisseurs, interne SIYO)</h2>
-  <p class="note">Calculé automatiquement depuis les demandes. « Reste à solder » = réceptionné − payé − retenue + retenue restituée (progressives uniquement). Un reste négatif = avance versée non encore couverte par des travaux.</p>
-  <table class="liste"><thead><tr><th>Acteur</th><th style="text-align:right">Demandes</th>
-  <th style="text-align:right">Travaux réceptionnés</th><th style="text-align:right">Total payé</th>
-  <th style="text-align:right">Retenue en cours</th><th style="text-align:right">Reste à solder</th></tr></thead><tbody>
-  ${noms.map(n=>{const g=grp[n]; return `<tr><td><b>${esc(n)}</b></td><td class="mont">${g.demandes}</td>
-    <td class="mont">${g.prog?F(g.receptionne):"—"}</td><td class="mont">${F(g.paye)}</td>
-    <td class="mont">${g.prog?F(g.retenue-g.restitue):"—"}</td>
-    <td class="mont" style="${g.reste>0.5?'color:var(--rouge);font-weight:700':''}">${g.prog?F(g.reste):"—"}</td></tr>`;}).join("")}
+  const fq = n => (n==null||isNaN(n)) ? "—" : Number(n).toLocaleString("fr-FR",{maximumFractionDigits:2}).replace(/ /g," ");
+  const presta = d => (d.nature==="progressive" ? (d.bc && d.bc.designation) : "") || d.objet || "—";
+  const unite  = d => d.nature==="progressive" ? (((d.receptions&&d.receptions[0]&&d.receptions[0].unite) || (d.bc&&d.bc.unite))||"") : ((d.lignes&&d.lignes.length===1)?d.lignes[0].unite:"");
+  const qcum   = d => d.nature==="progressive" ? (d.receptions||[]).reduce((s,l)=>s+(Number(l.qte)||0),0) : null;
+  const recu   = d => d.nature==="progressive" ? totalReceptionne(d) : totalLignes(d);
+  const rst    = d => d.nature==="progressive" ? resteAPayer(d) : (totalLignes(d)-totalPaye(d));
+  const retn   = d => d.nature==="progressive" ? (retenue(d)-(Number(d.retenueRestituee)||0)) : 0;
+
+  // --- Prestataires externes (Interne = non) : 1 ligne par acteur × prestation
+  const extMap = {};
+  ETAT.demandes.filter(d=>!d.interne).forEach(d=>{
+    const u=unite(d), p=presta(d), k=(d.beneficiaire||"—")+"||"+p+"||"+u;
+    const g = extMap[k] || (extMap[k]={acteur:d.beneficiaire||"—", presta:p, unite:u, qte:0, qteVide:true, recu:0, paye:0, ret:0, reste:0});
+    const q=qcum(d); if(q!=null){ g.qte+=q; g.qteVide=false; }
+    g.recu+=recu(d); g.paye+=totalPaye(d); g.ret+=retn(d); g.reste+=rst(d);
+  });
+  const ext = Object.values(extMap).sort((a,b)=> a.acteur===b.acteur ? a.presta.localeCompare(b.presta) : a.acteur.localeCompare(b.acteur));
+  const sExt = ext.reduce((s,g)=>({recu:s.recu+g.recu, paye:s.paye+g.paye, ret:s.ret+g.ret, reste:s.reste+g.reste}), {recu:0,paye:0,ret:0,reste:0});
+
+  // --- Dépenses internes SIYO (Interne = oui) : regroupées par prestation, sous le nom « SIYO »
+  const intMap = {};
+  ETAT.demandes.filter(d=>d.interne).forEach(d=>{
+    const p=presta(d), g=intMap[p]||(intMap[p]={presta:p, recu:0, paye:0, reste:0});
+    g.recu+=recu(d); g.paye+=totalPaye(d); g.reste+=rst(d);
+  });
+  const inter = Object.values(intMap).sort((a,b)=>a.presta.localeCompare(b.presta));
+  const sInt = inter.reduce((s,g)=>({recu:s.recu+g.recu, paye:s.paye+g.paye, reste:s.reste+g.reste}), {recu:0,paye:0,reste:0});
+
+  const styR = v => v>0.5 ? 'color:var(--rouge);font-weight:700' : '';
+  const qteAff = g => g.qteVide ? "—" : (g.unite==="%" ? fq(g.qte*100) : fq(g.qte));
+
+  return `<h2>Point des acteurs</h2>
+  <p class="note">Le travail réalisé d'abord, puis les montants. Séparation Externes / Interne SIYO selon le réglage « Interne / Externe » de chaque demande.
+  « Reste à solder » = réceptionné − payé − retenue + retenue restituée. Un reste négatif = avance versée non encore couverte par des travaux.</p>
+  <table class="liste"><thead><tr>
+    <th>Acteur</th><th>Prestation</th><th>Unité</th><th style="text-align:right">Quantité (cumul)</th>
+    <th style="text-align:right">Réceptionné</th><th style="text-align:right">Payé</th>
+    <th style="text-align:right">Retenue</th><th style="text-align:right">Reste à solder</th>
+  </tr></thead><tbody>
+    <tr><td colspan="8" style="background:#eef1f5;font-weight:700;color:var(--bleu)">PRESTATAIRES EXTERNES</td></tr>
+    ${ext.length ? ext.map(g=>`<tr>
+      <td><b>${esc(g.acteur)}</b></td><td>${esc(g.presta)}</td><td>${esc(g.unite)||"—"}</td>
+      <td class="mont">${qteAff(g)}</td><td class="mont">${F(g.recu)}</td><td class="mont">${F(g.paye)}</td>
+      <td class="mont">${g.ret?F(g.ret):"—"}</td>
+      <td class="mont" style="${styR(g.reste)}">${F(g.reste)}</td></tr>`).join("")
+      : `<tr><td colspan="8" style="color:#889;padding:12px">Aucun prestataire externe.</td></tr>`}
+    <tr style="background:#f4f6f8;font-weight:700">
+      <td colspan="4">Sous-total prestataires externes</td>
+      <td class="mont">${F(sExt.recu)}</td><td class="mont">${F(sExt.paye)}</td>
+      <td class="mont">${sExt.ret?F(sExt.ret):"—"}</td>
+      <td class="mont" style="${styR(sExt.reste)}">${F(sExt.reste)}</td></tr>
+
+    <tr><td colspan="8" style="background:#eef1f5;font-weight:700;color:var(--bleu)">DÉPENSES INTERNES SIYO</td></tr>
+    ${inter.length ? inter.map(g=>`<tr>
+      <td><b>SIYO</b></td><td>${esc(g.presta)}</td><td>—</td><td class="mont">—</td>
+      <td class="mont">${F(g.recu)}</td><td class="mont">${F(g.paye)}</td><td class="mont">—</td>
+      <td class="mont" style="${styR(g.reste)}">${F(g.reste)}</td></tr>`).join("")
+      : `<tr><td colspan="8" style="color:#889;padding:12px">Aucune dépense interne.</td></tr>`}
+    <tr style="background:#f4f6f8;font-weight:700">
+      <td colspan="4">Sous-total dépenses SIYO (interne)</td>
+      <td class="mont">${F(sInt.recu)}</td><td class="mont">${F(sInt.paye)}</td>
+      <td class="mont">—</td><td class="mont" style="${styR(sInt.reste)}">${F(sInt.reste)}</td></tr>
   </tbody></table>`;
 }
 function vueImputations(){
