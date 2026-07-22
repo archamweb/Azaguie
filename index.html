@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demandes de décaissement — SIYO Azaguié</title>
+<style>
+:root{
+  --bleu:#1a3a5c; --bleu2:#2c5f8a; --gris:#f4f5f7; --bord:#d8dce2;
+  --ok:#1e7e34; --rouge:#b02a37;
+  --f-peche:#FCE4D6; --f-gris:#D9D9D9; --f-bleuclair:#B4C6E7; --f-bleu:#0000CC;
+  --t-bleu:#0000CC; --t-bleu2:#0070C0; --t-rouge:#C00000; --t-marine:#002060;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;font-size:14px;color:#1c2430;background:var(--gris)}
+header{background:var(--bleu);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:600}
+header .sub{font-size:12px;opacity:.8}
+nav{background:#fff;border-bottom:2px solid var(--bord);display:flex;gap:2px;padding:0 12px;flex-wrap:wrap}
+nav button{border:none;background:none;padding:11px 14px;font-size:13.5px;cursor:pointer;border-bottom:3px solid transparent;color:#334}
+nav button.actif{border-bottom-color:var(--bleu2);font-weight:600;color:var(--bleu)}
+nav button:hover{background:var(--gris)}
+main{padding:16px;max-width:1200px;margin:0 auto}
+.btn{display:inline-block;border:1px solid var(--bord);background:#fff;border-radius:6px;padding:7px 13px;font-size:13px;cursor:pointer;color:#1c2430}
+.btn:hover{background:var(--gris)}
+.btn.prim{background:var(--bleu2);border-color:var(--bleu2);color:#fff}
+.btn.prim:hover{background:var(--bleu)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.warn{background:#8a6d1a;border-color:#8a6d1a;color:#fff}
+.btn.dngr{color:var(--rouge);border-color:#e4b6bc}
+.btn.sm{padding:4px 9px;font-size:12px}
+table.liste{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--bord)}
+table.liste th{background:#eef1f5;text-align:left;padding:8px 9px;font-size:12.5px;border-bottom:2px solid var(--bord);cursor:pointer;white-space:nowrap}
+table.liste td{padding:8px 9px;border-bottom:1px solid #edf0f3;vertical-align:top}
+table.liste tr:hover td{background:#f7f9fb}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11.5px;font-weight:600}
+.b-attente{background:#fff3cd;color:#8a6d1a}
+.b-validee{background:#cfe2ff;color:#1a4a8a}
+.b-archivee{background:#d7e8d9;color:#1e5e2a}
+.b-unique{background:#e8e6f5;color:#4a3f8a}
+.b-progressive{background:#fde2cf;color:#8a4a1a}
+.mont{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.filtres{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;align-items:center}
+.filtres input,.filtres select{padding:7px 9px;border:1px solid var(--bord);border-radius:6px;font-size:13px;background:#fff}
+.filtres input[type=text]{min-width:220px}
+.carte{background:#fff;border:1px solid var(--bord);border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.grille-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--bord);border-radius:8px;padding:12px 14px}
+.stat .lbl{font-size:12px;color:#667}
+.stat .val{font-size:20px;font-weight:700;margin-top:3px}
+.stat .det{font-size:12px;color:#667;margin-top:2px}
+h2{font-size:16px;margin:4px 0 12px}
+h3{font-size:14px;margin:14px 0 8px}
+.note{font-size:12px;color:#667;font-style:italic}
+.alerte-stockage{background:#fff3cd;border:1px solid #e6d9a8;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:12.5px}
+.form-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px 14px}
+.champ{display:flex;flex-direction:column;gap:4px}
+.champ label{font-size:12px;font-weight:600;color:#445}
+.champ input,.champ select,.champ textarea{padding:7px 9px;border:1px solid var(--bord);border-radius:6px;font-size:13.5px;font-family:inherit}
+.champ input:focus,.champ select:focus{outline:2px solid #bcd4ea}
+table.lignes{width:100%;border-collapse:collapse;margin-top:6px}
+table.lignes th{background:#eef1f5;padding:6px 8px;font-size:12px;text-align:left}
+table.lignes td{padding:3px 4px}
+table.lignes input{width:100%;padding:6px 8px;border:1px solid var(--bord);border-radius:5px;font-size:13px}
+table.lignes .tot{text-align:right;font-weight:600;padding-right:8px;white-space:nowrap}
+.voile{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px;z-index:50}
+.voile.ouvert{display:flex}
+.modale{background:#fff;border-radius:10px;max-width:920px;width:100%;padding:18px 22px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.modale h2{margin-top:0}
+.modale .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;align-items:center}
+/* ---------- FICHE OFFICIELLE (modèle validé DOC-REA-001) ---------- */
+#zone-fiche{display:none}
+.fiche{background:#fff;width:210mm;min-height:276mm;margin:0 auto;padding:8mm 10mm 6mm;border:1px solid var(--bord);
+  font-family:Cambria,Georgia,serif;font-size:12.5px;color:#000;display:flex;flex-direction:column;position:relative}
+.fiche, .fiche *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+.fiche .sig-cadre{border:1px solid #000;margin-top:14px;padding:8px 6px 0}
+.fiche .cartouche{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.fiche .cartouche img{height:58px}
+.fiche .cartouche .titre{flex:1;text-align:center;font-weight:700;font-size:15px;padding-top:22px}
+.fiche .cartouche .doc{font-size:10.5px;text-align:right;white-space:nowrap;line-height:1.5}
+.fiche table.corps{width:100%;border-collapse:collapse}
+.fiche table.corps td,.fiche table.corps th{border:1px solid #000;padding:5px 8px;font-size:12.5px;vertical-align:middle}
+.fiche .bande-projet{background:var(--f-peche);font-weight:700;text-align:center;font-size:13px;white-space:pre-line}
+.fiche td.lbl{font-weight:700;width:38%}
+.fiche td.val-bleu{color:var(--t-bleu);font-weight:700;text-align:center}
+.fiche td.centre{text-align:center}
+.fiche td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fiche th.col{font-weight:700;text-align:center}
+.fiche tr.ligne-bleue td{color:var(--t-bleu2)}
+.fiche tr.ligne-grise td{background:var(--f-gris)}
+.fiche tr.tot-bleu td{color:var(--t-bleu);font-weight:700}
+.fiche tr.tot-gris td{background:var(--f-gris);font-weight:700}
+.fiche tr.tot-rouge td{color:var(--t-rouge);font-weight:700}
+.fiche tr.r-espece td{background:var(--f-peche);font-weight:700}
+.fiche tr.r-cheque td{background:var(--f-bleuclair);font-weight:700}
+.fiche tr.r-virement td{background:var(--f-gris);font-weight:700}
+.fiche tr.r-total td{background:var(--f-bleu);color:#fff;font-weight:700}
+.fiche .sigs{display:flex;justify-content:space-between;font-weight:700;font-size:12.5px;gap:10px;color:#000}
+.fiche .sigs div{flex:1;text-align:center;min-height:160px}
+.fiche .espace{flex:1}
+.fiche .pied{display:flex;justify-content:space-between;border-top:1px solid #000;padding-top:4px;font-size:10px;color:#222;margin-top:14px}
+@media print{
+  body{background:#fff}
+  body.mode-impression header, body.mode-impression nav, body.mode-impression main, body.mode-impression .voile{display:none !important}
+  body.mode-impression #zone-fiche{display:block !important}
+  .fiche{border:none;width:auto;min-height:274mm;height:274mm;padding:0;page-break-inside:avoid;overflow:hidden}
+  @page{size:A4 portrait;margin:10mm 8mm}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Demandes de décaissement — SIYO</h1>
+    <div class="sub" id="entete-projet">Dispersion Azaguié</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span id="etat-sync" style="font-size:12px;font-weight:600"></span>
+    <button class="btn" onclick="synchroniser()" title="Envoyer les modifications en attente et recharger depuis le Google Sheet">🔄 Synchroniser</button>
+    <button class="btn prim" onclick="ouvrirNouvelle()">+ Nouvelle demande</button>
+    <button class="btn" onclick="exporterJSON()">💾 Enregistrer (JSON)</button>
+    <label class="btn" style="cursor:pointer">📂 Charger<input type="file" accept=".json" style="display:none" onchange="importerJSON(this)"></label>
+  </div>
+</header>
+<nav id="onglets">
+  <button data-vue="bord" class="actif" onclick="voir('bord')">Tableau de bord</button>
+  <button data-vue="encours" onclick="voir('encours')">Demandes en cours</button>
+  <button data-vue="archives" onclick="voir('archives')">Archives</button>
+  <button data-vue="acteurs" onclick="voir('acteurs')">Acteurs</button>
+  <button data-vue="imputations" onclick="voir('imputations')">Imputations</button>
+  <button data-vue="params" onclick="voir('params')">Paramètres</button>
+</nav>
+<main id="contenu"></main>
+
+<div class="voile" id="voile"><div class="modale" id="modale"></div></div>
+<div id="zone-fiche"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   LOGO SIYO (embarqué)
+   ============================================================ */
+const LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAATEAAAEICAYAAAA3EMMNAAAACXBIWXMAAA7EAAAOxAGVKw4bAAA8GUlEQVR4nO2dB3wcxfXHzzY23bhJOyvb2pk1JfRqG9u6nQPiUALBdFylG9FcpNs5AoRQDCQBQk/ozcS2tGtIJYRAIJgSSOgQG3CRdp0/gZDQMaYb+H/e3co+yyon3dzt3el9P5/5fMB3up362ynvvYlEECSPxJ2W3SFhJSMIUnIIxz9IuP6jwvXnh50XBEGQHiNc/yLh+t8K11smlnjHYRUiCFIyCNc7Q7j+f+qXrPk2JWSOf3EsdlH/sPOFIAjSLXW/enmrete/HMQLRCwtZN7aesf7IVYfgiBFT9zx5gvX/6pNwDbOxrxfTr/j1WFh5w9BEKRT6p3WHetdvylzFpYhZF8L17sIqw9BkKJFuN7FIFbtBWxDctfcX9/kjws7nwiCIJshmluPEq73XKcCtmE25l+M1YcgSNEhHO8nwvW/6UrEAiFribv+rLDziyAIsgHherZw/Xe7E7BAxL4RrnfpCfe8MgCrEEGQ0Jl+2z8HC8e7rqPN/C6EbJ1w/HPDzjuCIAjMwsAy/8tsBWyDyYXr3RFvbqnCKkQQJDRqm1btI1z/Dz0RsAwh+wpck7D5EAQJDeF6l7Q3bO2hkD0Wd/2DsAkRBCk4dU7LycL1X+mtgAUith5ONbH5EAQpKLGLHusvXP/SLg1bsxey14XTegY2IYIgBSPu+ucI1/8gVwFrM7moX+JfBY7j2IQIguSdeFNLhXC823piUpGFkH0ad/0LsfkQBMk74DYkXP9zVQK20eTCd+sWrtoJmxBBkLwRd7yJwvUfVilgGUL2hXD9S7D5EATJG8LxftpTw9YeCtmzorn1SGxCBEGUE3c8IVy/NV8CFojYeuF6P8PmQxBEKUfe+txA4fpXqjCpyELI/iucVhubEEEQZQin9XzheGvzLWCBiH0jXP+GaYtXDcYmRBAkZ+JNLdXC9RerNKnIQsg+xVDWCIIoAU4Mhet/VigByxCyP9a5rXtjMyII0mvijj9ZuP6ThRawQMQ+F66PfpUIgvQe4XiX5dOkonsh85YL1zsJ2xBBkB4jnNa54JwdloAFs7H19a5/xYVLl+Lt4QiCZM/JTSu3Ea5/fSFMKrIQsneE452N7YcgSNaI9C3eBTGpyELEIN1Zt3BlBTYhgiDdUue0fke4/u8KaVKRhZCtg4t5sfkQBOkWOBEEO62whasDIftrvLl1IjYhgiCdEm/2pgjXfyFswerC5AL9KhEE6YT58/sJ17siTJOKLIRstWj24tiGCIJshnBbk8L13gpbqLoRsfXC9a/9/k1PD8QmRBBkAzObWocI1789He9epeh4T0FSLGTvCcf7MTYfgiDtb/FWalIhXP9e4XqThOtfrvh3QRzdWndVNTYhgiCwjNxfuP6DioXmG+H4l0y79flB8aaWnYXrNyn+/Y/h4l5sPgRBIsH9kUpNKoTr31LnelVQvcde/uAWcYhHpv5ykafiza2TsQkRpA8Td1qnC9d/VbG4vBt3vIZJDVds8HesW7y8Qrj+L/NgcvHzcGsQQZDQOO58Z4BwvOuE63+lVly8a2oXrxqa+axdo9F+cdefJVzfV/ysf8Wd1jnh1SKCIKEhHA9u8f6f4tnRs8L1vt/R82b+6pUdIE6/4ud9LVz/5hN/tWybwtcggiChEW9eRWCzXbV/pHD9y+JO67adPVe4a2pU31spXP994bReUNgaRBAkVITjwS3eHyle2t0tlni7d/Xck278x9bC9X+qWMQg/aF2cct3CleDCIKEhnC8qHD9xxQLyZdxxzt/+h3PdWtJX+d4TCxZc6fi53+MoawRpI8gHO/neTCpuEG4rSSb5x/+s3sHCNdLKjeudbwXRLN3dP5rEEGQ0BCuXy9cv0WxgP1buJ74rrysX9b5cLwRwvWvU5yPz4XrXR05//ys84EgSAlx8oInthSuf1Mqbr1a8bhq5l3Lh/U0P3Gn9Xjh+q8oF1S8PRxByhPh+OdBvHrFovG4aG49uDf5iTveYFjaKs7PN/VL/Ltm/Wr5JnZqCIKUOLMWrzDzEXJaON5Pp938bKcmFd1R19x6ADiKKxay94Xrz1dbgwiCFEPIabUmFUv8hfHmVTvnkq9Zi1ZuKdw189WHAPIfEq63n7oaRBAkNOKud5hw/WcUi8Sncdf/4fHX/WWLXPNX53rVwvVvzYPJxWVqahBBkFCBjXfh+p+pXUb6v5h114qsTCq64/BLf91fON7sPOzXvRJ3WqeqyCOCICERT9/ivUaxOKwWjneSru+nzJShduGKCuF41yjO55cQOeOYxc8NUJVPBEEKyPTFr20nXG+B6lu84USxduEK5ad/wvGOEK7/nGIh+49wvbNU5xVBkAIgmlsvFI73rmJReFA43oR85HfmncsGC9f7meL8fiNcb0n93b6WjzwjCJIn4otX7yFc/wGVJhWBo/X8ukUrt85bvp3Ve4kl/j2Khex9uEMgX3lGECQPCNe7VH2UCv/O+OLVY/LZYNPvfH5Q3PHOVX33pXC9J+JNq6P5zDuCIIqIN7ceK1z/JcUC9qFw/blH/+zevG+SiyX+KLHEv1Fx/tcJ178i33lHECRHfvzjdf2E4/8yD5dyXFu78DUlJhXdcezli/sJp7UW/CCVlsHxVsebW0UhyoAgSC8RzZ4UjuLB7/r/FI73g0I2Su2i1yqE612luBxfCde77cTbl25ZyLIgCJIltc0rhsOlsspdeBzv0rqm1UMK3RBxp+Vg4fpPKBay/wrHO7fQZUEQJAuE64EPomqTit8L1w/FBzHuetsJ179YcXlSN5PHF69iYZQJQZBOqHP9scL1l6qdgflfxx3/3JNvfnqrsCo+7rTsWr/EX5wHkwu8PRxBigm4RFZ5uGfXv0U0t9AwyzXl5/cOjLuenYdw2s+I5pZDwywbgiABwvGm17trVN/i/V/hevHDzrxuwy3eYVG7cMUo4a5RfXv4J8Lxrg27bAjS5zns2kcHCte7Vbj+F2oHuXe1cL2icNWprp7UTzjeCcL1VN8N4AnXOyPs8iFInybutJ4lXP9NxYP7aeH4kyNFRN2iFXCxyOWKy7keAjuevODl7cIuH4L0SeKLVo4MTg+/VTq4He+SGXcu2yFSZAjHmyhc76E8mFycF3bZEKRPIlz/IuUmFY53t3C8PSNFyIzbX9pWuP4F6p3avYfqmlu7vLkcQRDF1DktMeH6f1c8K/lCNLcmp93y7KBibTCxePXO9Y53l+JyfwAO82GXDUH6FML1r4E48ioHc73r3Rhf/JoRKWJmXPfkgHrXPx0c0hUL2Utxp3VK2OVDkD6BaPbgFu/Vigfxv+JO68nWrFlFf3t23GkdKVzvF4rL/5lwvBvPPvu9oi8/gpQ0py1s3Uo4/kJwZlY8iK+YtfDVojCpyAbh+kcK11+mWsiF4zeEXTYEKWtEc+uPIG684sH7qHA9K1JCzLxr+XDhKA9l/bVw/XviS1qHhV0+BClL4k2tOwrHe1C5SYXrX1C78JXtIyVGvLklH7eH/0843gVhlw1ByvkW7/cUD9rF9Uv8XSMlyNSbnt5auP5Zym9zcv3HRVPrAWGXD0HKinhTy+HC9Z/PQ8jmM+KLluV8i3dYxJv9MXHHu11xvXwoHA9DWSOIMs46q59w/evBaVnxYL2+tmlVdSm31EFnLu4v3DUzYRmouG5eFY53ctjlQ5CyQDjeGeCsrHaQeiuF6x8dYazkTQqE61dBRArFIvaFcP07Jl/54MCwy4cgJU198wq4UPZucFZWPEgvjTetroiUCXGndTLECFNcR6/HHU+GXTYEKWmE650nXP8txYPzgXhzy4GRMiLutA4RjneR4nr6Rrj+ffG7vaqwy4cgJUm8efVewvUeUz4wHe+c6be9uG2kzKhrbtk7D7eHvw23noddNgQpSSB+FjgnqxyU9a6/oN7xd46UIbV3twyKO62N6gNE+k/HnZaSMgZGkNCJu/4xeXCreV80e3VHn3933m/xDov44tfMete/WXG9rRWud13YZUOQkiH561/3h0tewSlZ8WC8rm7RqtGRMmby6aeDOcrxwvX/T3HdrRKOXxt2+RCkJKh3vXngjKx4EL4kXK9P3O4za+EKHRzaFdffV8L1m06++Zmtwy4fghQ1dYtWVoA/oPJbvF3v4lmLXhse6SPUNbda4D6kWMjeEE7rWWGXDUGKGnA+hrjvigffH0Rzayi3eIfFzIUrB0PsfMX1COG7H65rahkTdvkQpCgRjjdOuJ7akNOOt164fqJ24auh3eIdFvVL/N3rXd9RLGTvCNfH28MRpCPSdz0qD7t8e+2iVTv1xRo//uoHBgrXPxUc3dXWqfdiXRPeHo4gmyBcb6pw/RWKBewt4XgnjZ16Qei3eIdF7eKVTLj+jYrrdZ1wvJsiUpa83ymCKEM43r7C9U+oX7JmuqokHO8HtQtXjOrTzbTTTv3qmlbtpLJeU3ULkXAtC0UMQRAEQRAEQRAEQRAEQRAEQRCk5NFq5mmaZR+mcfsswu1bCJcL9Fiyx4lweanG7RmE27tVHFi/ZdjlQpAes/OR/UZE7cHEkhaxZAPh8prejAU9PR5uJZY8h3D5fc1KjMTWUIhmNU4klryccHmHHkveSbj8NeHyGcLlm4TL9YTLb/VYsseJcPkh4fI1wuUDhMuFwW/fpHF5bGXN3MHF0ojaQXIYsRIHEivxvd4mHf5+4pwufSNHWMmtSTSxTy7P2SRFG1mkRNBiCY3wBM+93DYn0YSZr3ySSWdspXO5L7Hkj4P+CuLjEC7/Rrj8P8LlJ70ZC3p6PMBY+g/h8nnC5e+C37+TWPI6YiUOZQefUrK3XoWCZtnfI1zeoMeSdxAuHyNcru2tWPWwIb8iXL5MuGwOnn0iqWnYIcy6qLTsAwiXvyJcPp1DWkgse2xXzxk+ce4gwuV5OT4nI9lNGrd5pNixrH4kZh9FuHxSQbmv0ybNq1SZPe3AU7chViJGLHlDqh25fJhw+d98jwU9PR4gfQaTBp3Lu+AlTywZrxo7Fy9I6Ygx35u9BbFsGES3BR3iy0I0VDeNuAwEjXD7HM1KkEgIVFryYHg75liOFzXL/m53zyLc/i7h8ilFdfcZ4fa5FQfUFvVSncTkBBKTDyso71vwElCVL81KVBEuE3pauJ4skvHwFeFyFUkL2tWEJ3ZTVd6SR7Psc3Uubydcvk24/Cbsxuqkg95DuD2H8ERFuYrY8EliEOH2VbksS9o/l1iJH0SKFC16xjZ6TNoqBIJw+VctmsjZD5VY9ijC5ZnBtsnrYfd9vfPyfkq4/LPO5ZUkavdJ/9sUxEpYhMtfEi7/V4zi1UHDrSFcuhqXu2+3z/EDyk3EAI3b+xMu/6KoviDdoEUTeqQICWaezyko52s6lzldpktqGrcjljyccPkb2O8Nu6/rPROzezXL/klkz2llG9q8Q4hlXxzsd30VdkP0ouHuJ9w+prJmzuByEzGAcHsebBQrqqsWwuW0SJFB0su1qxSUDzbE7yYTe98XiCV3JlbqZf5M2H1b710dQPoI9gQJl5MifYB+6fV06nQw9AbIoeFeINz+oRadp5WbiGmWTWE5o7CufqtFG/eJFBGE20eDwCoo27MaTxzSmzxU7nFwfz0m94aZDMxowu7Teu518Tnh8hHNkmdGypbvfa8/vP2gsGFXuKJG+xfh8keE20pPpMIWMUDn9g/0HJ+b8fx3CZdzIocfXhSRHbRoYk/Ck66Ccr1PuLwsYk7ucTijoWNPHkhi9nidywfC7se62jHxDSyHNS4vjpQjwQzs8zJrtDU6l9P1aOP2ZSViNXO3I9y+WdVyn3D5BOnljEUp1dH+mmXPAgFSUKbHtGhi755mYejY+ECN2xNVnIoW8fLyQ2LZP42UExq3Lys3AduQuHxWt+z9hu10RP9yEbGgzWoIl48q6thfEi4vHhE7c5tIiBDLnki4/VdFe32n9PT5lXsc0p/wBBye5JyHEhCytTpPXhgpBzRun1Aog9UQGw32NXYuJxGLWBf0Izz5IzB9UVJHseRLhMspkZCoOujMbXUuz4bN+JzKkl4y/aGypqHH2wiE23vpYJpQBH1Wz/+YgPQOsexTI6XMyHGNAwM3oa/7QIPZWs28oWUjYumTs91AoBXW0x3EShiRENC5nKzHks8qKMOL4GPY0+cTS+4CbkJh91W9sOPi65TReFTuGClVCE/5PX7RRxrsn8Sy9ysnEQvacDrh8lWFtnYFvy2bWA2jCbd/oSD/68C2cejYOT3yJdSijdsTyz5dlSFxKSWSdl1aEClF9EmJIYTLD/K9jAwM7sBF6M+Bn+EthCevD1yYlgT2aK8XwiYNrK11LoeWk4hpPFER1KuqOvqTFk2MixQQwu1jdS5bFeT9b5plH9iL548Hd7qwBUUPKREuP9Ys246UGoE5hXKfL8LleyTtpnSWHkvahNuzNS6PIpZ9oA6Gg9ymlZY9mljSTB+n2zFiJaYRLhtS34/JCwmXL+UpbyCm+5WTiAG6ZU/WuXxSUR2BYeSZYw6dW5CbljQu9wK3MQX5hkgRiR4/v6ahmnD72jyLxPrgRX2XzuUPoZ/rWSTC5Q8hhE+ufSyL/ME+4qpRE07ZOlJKBPZBKiviFcLl+YTbotKyzWH7z+hVeBBy8LxtiWV/n3AJlumPKDc05PIwsu+JA8pJxAye2IJw+VN4oyqqo6cItw+N5JkRu0wZQLishyN/Bf3vfs2yq3vp3vRGnoQBhPVSwmUj4fa0Siux86gJP8y6742INgyo5ElCuDwsELXzVZ1Id5DfT3RwTyoVtHTDKRQH+VON21MIl0qVXLPsKOG2rdRfDfZeeGJUOYlYUFcQFugBhRu+V1VYc4aoqKdO8xxNmYk8oiC/y3Quj+vp8wmsCNLBCvNhaH2exhPTtGjDMFX1RbjcmnCbB2L2cB4Ov94YNn5GUUc22QDYwag4kQzCf1xcFWscMnjkd/Ji8T1s3HQ4QZ2p6m2ZDi5nTyw3EQMIt08jXPqK6mk54fbxkTxRGWvYPoiR9rUCd5rbR8YatuppHgiX8DL/t0Ih+CQ9tuxpwybMztvSrHLCqSBmNYTbl6sMzhDsjfV4SR4Keiy5VlGh58PJTiHyDKdmCqf9B5eliFkNBkTyUNipm4iVn1AuJCa/pyhKxd81bsd6+nytZh6I6DyFdfUO4fJmzUpEI4WhnzZp9nDC7Z8pDM8ES+DXIsUOOXjuECV7Jzx5g85l4SKr7jUTfDt/oWT/JCZPqpw0u8dv7mIXMUCHQxQF4hDk7Q3CpXJjSMITILY3KsjffwmXP+5lHsYSLh9XVE9wyn8bsRLKDaq7Q5s0dyhMJnI2Et5Ylve0Yg+oSHjiOLANybGg3+pRe3d9wrz+Bc27JfcgXK5Q0FBw4jOyLEVsUmIbwuW1qk53IX6ZZqlZfrdBuDxBV7DsJVw+qFnyO73LQ2oP9ytFJ49Parznfpqq0GoahsEBgqL2/lzj8o5IMZOKr5SjasORuFYzd1hI+XdyPZRIXbhgyX3LUcQAYjVGVWyYZ+zznD9yvFASu51YiX0guKCiYIfTe5MHbdLp2xIuT1dUP6s0KxGau1YbOreJHpO/VVAeSG9Gipng2DfXgkaHHzBjYIgnq60KLLt5uYpYEBdOqrq0ImUIyu3Dc83U4N1PBlOQM1LOx7nPfhZXxRK9CnaoWfbuKmKyBcvIqyNFgDbxtEE6tycrau93qqI/LJpbxTZDjyVV2BJVhZX/4QfWDlRk/HdIGYtYRLPkrsH1Xio6NaQbKy07pzsMNCtZQ3hSRZSKZ+F+097mg1j2EbD3oyAfLxAuQ1tGtkfndqUeS90Glmu51hKezCmkd14pdRELypCzo3C5ixigc/skMJVQJGSv5dKxKy25A+HyolxNAoJgh5dEjjyy1yY9eix5rCKfw6ZIEVEVk1voXNYoKNtXhNtLI8VKOYhYEHkDRawbdCsxLLiJXYktESzBNJ7YvXdtljxMxQw6dXNRDo78Q/efBTP56TnXR3pPrsfRMvINsWw4+fUVzLzfjhQrZSJijyg4Ui77mRig8cbJJCb/pkjE/ku43QB7bj3JA/jLguN/7s9PthCePCWn+ojCjeLyYgV1sVTnpxeddTupadhBt+T5CtobRSyvDcXtHwURMH7b62TZe/UFEas8ZNqAwE3lI0VC9ohmNVo9yQPh9sngiqPAEPMeEk3mdGcCseR+hMuHFLhl3R8pQqpqZH+dJ/fOuZ1j8p2Kgxq2jRQj5TAT03nC0KzEXpWW3Lu3qWLS3O37gogBxEqAX+X9ikTsC7ASr6wRWbnVECuxL7w0FDwX6ilnU4ZgU/+dHPPyLuH2pZEiRY8lxyio7w80XtiQTAUWMXuPoXse1bcu4yxhEQMIl/FcTVM25DkmnyUxeWR3zxw94UzYaG4Ak5Yc6+hjcEgfPrGuV5FRMtFjyeMUDPB/Ep7I2UQnXwTL91yF+hNiyWSkXEUs7f6TLF47kgJRSiKmRRshYsMiFSIW5HsBsewuvR50S0Z1NSYVTxArUaOiHhSJ2GMk2lg4l7seolkJkmtEk/SMu7hOX1WL2FotlhgZGTy4KO4qDItSErE8+FWuJlzO6uxZGm8Enz5wTs71Oa8Tri6yggoR02PJhyJFjGY1DCbcPlfBvt9LkTLeE/tW4/YVUFmRPkzJiViNvZWeDtL3ubJbpCy7w9vDSUzC3tMLCp7xBy3awJTVQV8QsZq5gyCoZY71DumtsMvSIcGdfDnbDQWuH2dpNfO2i/RRSk3EAMJtZX6VejoU+VkRdsgmgQAIlybcnKSgjy0nXJ6ksvx9QcSG7nF0f2Il9lBQzncixUhwQYeqm6MhFMp8YtkFiSlWbJSiiAGEy7mqouUSnnxU43KTeF6EyxmwDFQQ7PCG4ZN6Huywr4sYoMeSZvmKWMw+SGVo6sCZ+ufESu41YqyaSAelQsmKmNX4HYhmoqj915NY8ho9mjZZIZa9rwqfzVSwQysxWXXZUcSSpS9iQw+dt6WyCyU27XS/SQdnS4zTamYPivQBSlXEAJK++X2ZkvaHvS8upww7cOYguClJQagkmOGfk49yo4glS1/EgMCJVqmIbUzyvsDRd54ebdyZTDg9Z9ueYqWURayipgEi/F6n6vZ3wmUz4fYsRRd/3K9FG3vlo9kVVQfMGKBze6qC8uJyMmzg/rt8X1abCiPN5SLC5YV6LHku4fYMwht2qxg3q2xmaaUsYoAeg/hTyvwq4fbwVQpMKlYQbuflFvKR4+ODdC5noYglS38mpsXkboW+sh086wm3nUDUfgQJ7H8gTLAek7uP4KdtFamoKCm7s1IXsTGHzumvc/ssmJkXsi90URfrCbfvrJg0Ly+GpChiyfIRMSAVolnRUiLH0MfL9Jh0SSx12QGI2zmEy7M1yz5WtxK0clxt0R4WlLqIAcRq3J9weV/YApaqi5h8TuOJo/JVVhSxZHmJmGalAuapvV1bnbiBtfByncvbdC7P02PJs+HKNt1q3FE7sL5oRK0cRAwAy3uwHwy5zd+HF1nk2GPzNhtHEUuWl4gBhMs/qbrqqQCd/A0d/PXSF67ammXvPeLAcOM5lY+I2VVwAW3+DnuyqoeHCbfH5rOcKGLJ8hMxzZKTgssOQhepXjin/jqIkzVV43YoNy+Vi4gBRKFfZS/qwCNcnpbvMqKIJctPxAA9Ji9U5UsX0gDwCZdwnfupWs08radRR3OhrERs0jyw8Zpf6C2GINhhkxZtJPkuI4pYsjxFDNBj8rJSFrJgMIDt29XEkscSyx5aiHorJxEDiCXBrzLn0Dk9LP/LGpfHF6J8KGLJ8hUxdsgpcB9gyQtZMChWwG3IGm+k24+dktcbystNxABY1qX2HwvTVutITF46wjquIAbRKGLJ8hWxFHtMhVjsEKblo1LbI+twgMTkzRpPTNCsxqzCKPeGshQxy95J57KpQCL2BOF2wSKkoogly1zEAjSe2iN7JN8W/QUaJPcTbh+vWfmJwlmOIgYQLo+DEMx5bpt/Ey4bC1kuFLFk3xAxQOOyhnB5hc7lG6ruLAxRyMCo9/jKmnnKwwWVq4hVRBPbB4cleXuRpQIGRBvNQpYLRSzZd0SsDcJlgsRSTsKvh23dn+OAeUKPyUmV4+NK/TbLVcQAzbInEy6fzFN7vEq4Pb3QZUIRS/Y9EUtxyCH9iWXPCyIePEa4/DJsUepdSkVZGKOyaspZxCKHH96PxGQjXE+mWMA+JzF5TQWfrTTYYTagiCX7qIhlQLi04OosPZa8nnD5VKkJGiyRNKtBV1UfZS1iqW2F1J2Rv1fcBv/QuH1YGOVBEUuiiGVCeAKWG1frseQNOpeLwd4HRK2YTzYhGKTG7cnDxp+i5M7MchcxQOdyGtxspKj+/0e4fVZYZUERS6KIdYZuza3QuH084fbVhMsb9VjyxtSV81y+AHHFiulwgHB5S6XVaKgYFH1CxGoaNJ3L6xVdLvNHwu09wioLilgSRawnVFiJ0ZplH61ZNkR5vUGPJW+CFISxXh74P4YhYutJTB4yanzu0RL6gogBhMsTCZevKbiL4ZIwy4EilkQRU4GWumLdPplY9jWEy5tJTN5CuHw06OSFEbKY/DHhiRG5lqWviFilJSnhyTtzLOcbxCqsXVh7UMSSKGJ5Yf78fhqXEzXLBrenW/TUkiO1BM3nbKyVcHt8rllHEUMRK1b0cr6yrdjRaxp20bi8hMTkrUGIlnzFOzsk17yiiKGIFSs6ilgRcOGFMEM7PbXk5PJt1TMzwm2hWYltc8kiilhpiRjZ7+Qt4LRVQf/B246Q7Nn1+AsGBNFcX1IZZQMueCXc3iWXtkARKy0RA/DeySQuJ8MCLg5JhzBWE7SPcPkO4TKaS55QxFDEihUdl5PFCbFsOA18UeE+WU6ngihiKGLFio4iVrxoljyDcPkmiljhKBcTi76ynBx+wIz+hNt7Kignnk7mi8Ab4DOciRUGFLHSEjESbdySWPYPcnzppF48YZelbNG4PALML1DECgOKWImJmGXvQCz74pzGB0+uJ1w+G3ZZyho9lnxGweb+EUN2/X6vncFxT6xvLicJl49rXBbkMpreoEUbqwi3n8ixjF8QSy6IFBPEsnfWoomxmmXnkBJFc/s24fLpXG3HiGWfVDlpdq8v4EURKz0RI1wem2uATwjqqHEZSjihbCBcMsLl2hzLuE6z5JxIMUGs1J2CfyZcPtjbpEUbQrmktiM0bt8Hb4vcGsqeUVkzp9cXiaCIlaCIWfahhMv/5DjA4cLpayJFih5LjlEw2/ygkif3ihQThENk05xNE/J+wWm2EG5fBRWNIpZ/ymlPjHC5F4QEynWQ67Hkw5EipHKC2IJwe4ICEXsnst+pSuLuKUOz7BtzvfiBWI3fqThgel7vcswWwu2Lcw2dTLh9YsWE03A52YdETLMaRpCYPE/BIH+cRBuHRIoMYiWGEW5fq0Ck344UG8SSP8o1nDThdh2Jzit4bPSOIJa8Am79zk2U7cMr95jaa1HG5WTpiVhk3Lx+cPuVAhFrJVwW/LKT7iCWbcLdsTmWDdKbkWKDcHtKrr6HhNsPVNbMK4p9McLl3QpsxdBiv4/NxAA9ljxWgYh9DfeaRiKRnINrqqLiwFO3JFwerqBsXxIrVbbighyUoLn6HULhNCuh7KKNXCBcPqMgsgWKWB8UMcLlYRAZRcFgf0mLNo6LFAnESuggrArK9SGxkkdEihE9llyXewHtAyvGxbcIsxxDDzl1CxKTz+ZaFhSxvipiiZ0It+9SMNg/J9y+u+KAWqX3mfaGykmzt4Y9XgVjAsr1dmT/04trU1+tiMlFJNoQ6oamxm2e6w08qf1BLg/OJR+4J1aaIlYx7qSBesxWEVcMyrUCjKbDLM/wPY+Hu2F3huAICsrzDez3RYoVVcEFCZdHalZjKG8fdvAp/dO35uRqIyZXEMvOaSmAIlaaIgYQbh8JV/gpErJlmpWYEEpBtt++n8Ybhuo8eaGisnyqWfaVkWJFt+zfqghjAz5VxErsOmL/aQWfcuox+T0VfpOpi3Rr5lXlkhcUsRIWMSuhyl4MyvYV4fJJzZI539vQE7av2qWfflBiB8JtW0U5grK8UxGbUxkpVnQrEVMU/eFbncurNcvesWLiGQUTMo3bUVhGqplNJo7YYc8jc8o7iljpiljFQQ0DSUzOUDj44eLop4hlWxHr/LyfWFZOPGULwhuZHkuqFLDScPrWY8mP1RU6+QvC5WTCE702GM2GIfscswXhcD2avSxXv7eMDdmDcs0XiljpihhAuDwI9n8UigCkV9LbLbmFPu+MwSN37Ueis2H2dTyJpe5z/VZh/j8i3J4VKXYC04SchWBD4nIl4bKWWIk9tEmzlTuIE8veP9VgXK5RmOe/Qn5zzRuKWGmLmFbTWEF48nyVQpDhW7k4ELN9SY3IeVxo0dkw8wIzqaP1mEyAg7biPMOG/muRUkDj8vuq4tR3cPHGdM2yYdOfjRjfSzOMgw/ul7pg17LBlmdKcLGusgtC0iKWPEGflPvsEUWstEUMINyGLZYW1eMhKPOnhMuH9JicBn1Z4/JQEk3sptfMGWbwmZ16iuyw53H9K2oattMs24QtFD2WnEK4PZXwlOvgl3nK6zpiyXMjpQI0GihvnirjE8LlTYTLk/RY8mhIcAQNewUkah+gwYYqzNqsxJ6aZe9HuB3VeAKENf3dmH0M4fJGwu3383GBbnCXpRIDRRSx0hcxraZxOOEplzzlfa2DmQ5YB9yjc3mWHpMQ1+zojhLh9nGEy9mEp+5efSWf+crYC/t7pJTQLHlWriYKPaykj0l62fk44fJPhMvfB2YSS2EKS7gNwleovJyjRRuGq6hHFLHSFzGAWPaBsKFdqPFQbIlw+aHG7RMjpQbh8nmle2MlkAiXy3Uu91NVhyhi5SFiw8ZNH0C4fXiuccZKMRHYquFycaQUIVZq2bauUDOgsBOYlhDLnkkmnJbTrd+ZoIiVh4gBJJoYTbi8Ml97TsWYSNos5MGqsXNDd5vqNZolnVxjjJVKgmWsxu3vqKw/FLHyETFA44l9Cbcf6QsvdpLeB1umcTk2UuoQLu8tdyEjsVQ8fuWhdlHEykvEAHBF08t8f4ykwwitIZY8PVIOjJjUOJRw+UC5ChmJJZ/TYvY+kb32Um5FjSJWfiIGEG6P17l8To/l5wS/CASsRbPs0jGnyAZiyZGEy/vKTsi4fFbjctwONbPz4hqFIlaeIgYQLseC2YEyN73i2QP7O5hvRMqRiticIYRLcBD/otT3BAKH3Kf1mNyncs9D8nYnAIpY+YoYQCx7z+C2eXXeIuGNic9S4ztqT4yUO5ollxAuV5Wq+UVgzHofsdRu4ncEilh5ixhAuARj2FMIl8+V4kqFpDfw4T6AJm3yzLz6OBcVmiVPACHQuXw3X5b9eWgssPB/Cvw4NStRkKCNKGLlL2JtEKtxH8LtP+g8CUEIQu/venZ7X/8jXP5B4/bMSF+FWPLy4OLcN4t1Zha4cjxJLPtqYtmjC1k/KGJ9R8QAvcYeBNGAwR8S4usX0utF79nMaw1clK1Z8sKw66xoIFyemTrBTJsqrA37TRQ41r5EYsmlhNsXEasxlMtLUMT6loi1QfipWxCeGE+4/DXh8m+Ey3+FuWIhab/Md4OVyB81bp8Sdh0VLeSgRpNY8hbC5cN6OrrE6kBQCnGq8npqxpX2t1xUye1xw2vmhWppXGnJfQmXN+ux5CO9TeDkq1nqXKHyQWXUJoTLs3Ms593Eso+NlBl6FBzI7VMJl38hXD4Gce4DQcm3aK0L4vsvDVZLl1XVJEnY9VFSsO+eOlCz5PHEkk2ES+ioSyHBLUTBwcBb6SBrKQHKZgoMjfJOsDEPU/XHN/xmKsyPnF0ZmzsisssuRXPPH4JkAvdOaNGGfYhlX9Y2JoJQUmDW8GpqNpqONfZFV2MiCK74VbDqeSuYLMC4ejT4zYeJJe/ULPuIyDHH5O30vc9SGUvsSCz7aM2yzwlC6kDEChCjRztLhNt/Jpa9gHD7EmLZM7RYYt+K6OyiuGkcQXJhh5ozBoyIJSs1y/4usWybcPtawu3fEKvzMRHMrsCT5hYtFSbIPqbCsscU00W9CIIgCIIgCIIgCIIgCIIgCIIgSDHAWPUQ0zT61MmqYRiDKKWDq6urtw47LwgSYczQGaPjTZNNoJQOr6io6NQOhTFjZ8bogenvGps4l1JKqxlj44Lf2X/06NGdDmzGRm7JGN0XvgvJMKo3CSHNGN2r7bP2iVJ6AKW0atSoUVnd7ceYMYIxul9Hv8UY3dkwjF4PREoNwzTpHNOkWQdgZMwY2lY+mqZTA17GjCGM0T2DvLLq6urNHHoZM3ZgjO4RfMeklHbr9MsYrd5Yn0ZWrluUGsMZo/ukn8OOZIydzhg9MaMud2PM2D6b3zJNui1jxneCv9u1urp6m86+axijt4V2anuGYRibfdcwRm9jmnSnzvpMuzbPe6CAjqDU2L6T/BzAmFHZ2d9VV48ayJhBsylb8HsbDKmrqvQtMtu63fcOZIyCGUfpw5iRYIx+YprsW8bo8d0MKpcx+jl81zRZdeZnlNLZjLH3gt/5H3SWESOGdiiIpmlMZoy+HnzXZ4xucnuyabIXgmdslhij7zBGf8EYPRQGtml2nt8gz1MZo62d/NZfGaMnmSYjo0aN6vG9mYzR6xija02TTjcMPasYZowZ32eMPh88/0pK6cguvgtl/Efw3V9SSjcTHMaMQxijfwu+cwul1OguD6bJfppRD13625mmASKyC2P0R6bJOqzHdKLPmCY9FdqkoqKiy7pgzNiPMfr7IM9/opTu2sV392KM3hN89yFK6WaXIDNm7MYYdTrP2ybp95EQME02vov+/BN4sXX8dxRewldnWTZIftvfMmYMZoxe2slzv2CM3muaDCYFyu6hKGkRS3/OHmKMfhl06rmUjt7szcxYNbzRV2ZU5rT2b9dMEWOMrmOMfsQYXd9BQ/yGMWNy+5lcZyLGGP0MRKeD37qKMTaqJ/VmGIbGGLs/KOtVpmmMKjcRM4zUrPE406SPt2uPNYzRlxmjLzFG/48x+mnG578Foelo1lgIEYO2ZYx+HPSZjlJzJGQRY4x+HeRlXca/raR005d5UDYQscvbleHj4G8gfdnus2UdiRhj9Jug7aD/f5Hx3I9Mk50UKWVUihildG/G6BsZFTRh1KiqTWY4pkmladJ3gs9fY4zu1P532onYPYwZNzBGl5omeyad6H/bhCgYREdT2vGysJ2IPcWYcTtj9GH4neBvUw3KGJ0H+zzZ1xs9mzH6ZqYYDxs2rH+5iBil1dszRgW0UfDb7zFG/8kYu5NSehzkhVIKWxHTQRgYoy1tfYMx9hcYtCNGjBgQgoi9Cf+d7jObJ9Okp0XCF7G3gz69gDG6PC1qDMTo4c3LVj3YNI0Zm5aDNgUvz68Yo6valfHiTkTsM0qN3zJm3AwzMMboC4zRd4PP3meM7R4pVVSKWPo79I8blZ7ewphR0fYZDFjo7BmVOo4QsllHb7ecPKCDfJwFg7ttBpAWBbqfYej9uxGxsw3D2HCRLqUUPlsdfPYupfS7WdYZzFD+1G5WON8wNpa11EWMMXqYaW54Nrw0ftbR89vl4+G22UUwI9s5BBF7jNLs9yhDWk4+1/bvsFQ3TfpSkPflhmFsl8Vv7RJ8/1PGjIWdfa+diL1DKY22fQbPyfjs68wZXKSvi9jo0aOhclbAVDf4zYMNw0htwsNATO8hpf79PsPoeFO5OxFLf8ekjNG/ZAjmuaa5UaCyEbHgWQ9kPOv72dUZPaX9Plv6bUaPLgcRSy+V6Q3Bb8Ly48KqqqpuT2AppeNBlGDpEszIbqKUbvZ3KGJsg4hRWjXINOmhQV2voZQeVAgRC36HZPSDtyOlimoRAyiFGdiGN/JDwQxsV9jEz9z47+zvsxGxID9HtM2kghTNt4iZZqpj3NfWMWAvI9hXgP9v6G6TtBREjDEqM142fwTR6e43M/72RMaoF/ztI4zRSR3kGWdiAaZJ4QTx4KC+/s2YcUykG1DEuhaxeempubFTxyn1lv2iOxFL/y59MmPf6si2tX/w/+dRagzNVcSC59zPGP0q+N3Dqqo23YPrSsQYqwbzhEeCz2B/4YjuOxCdZpp0RTD7u3LMGGMv09wgas8ytunbrhRFDP4to07mR3pAVVXVlsFJZtum8xUFFrEXghPn/donOAFkzKiKFMlykpDh/U0TzCfo7W3LyVGjRhVkOclYdX/GjN2DzyC9FSkTEVsdDMRnOknvtS0Vuhcx4zjYS8nYU2kTmv/raDO/tyJGKZ3TdpjAGD2XMTq8CxG7EAY5pdUVMBM0TTrPNDd89gyltMvbkSmlW8PMJGOZlVo+MkZvMs0NdXhGdfWorUtVxOBUkTGa+jx9CmmI7n6vg9+3M37/F8ViYhFsqG/Y+A5xY/9V02T7pu0zaaqugv3dJVn+Vm9EDMbuDxgzCBgnwqGbadJrM142f4qUg4j1MFV3/9vs4Y0mFxs2EE/uyrixFyI2Ft5gwe/fzNim+2ztROx3jNEzYZM62Ldrmym+wRjj3ZcnZZvWtgm7hFK6Wzq/xoGmSZ8K/v0Bxuj+pSpilFKTMfqr4Pdgz3FCd7/Xwe+jiGVpJ2ZuTLAtsbtpGkPyJGKfpk/66fWweskck6ZJXx49enNzqFKdiYH9zz9Nk73UUWKMfpDtTAyglO4DM6+MCnueMUq7+7seLicnBm+2bkWsgzfz2sBmbeqYMWO6nMZTWjUwMA5MnawyRqe0y8eCNsFmjNZXV1cPLAMRu7urWVIxilhgC7Wyk/67lDFjTiT8mdjn0CcDQ++3M7ZZ/measK9aNUi1iHXQ9yF9Ypr0SdM0joyUMvnY2M8E3jAZlZfVgOiJiJmmMYsx+q8g/z+n1NC7mIn9p51h5j0dGRh28pwDTJP+vW3pyZhxOLiLbEypGd6a4PM7KO14yVwCIjaKMXpbhl3doe3/nlK6HaVGNWPGmCANLyIRU2piAR4hm7azUUlp9dAcRWwFpSm3nxhjtM1cKPWyT/chw8rDTGx9MA5ehsQYfZFS2hQpB0pdxMDwL8Ne7DBd17vc2GeM/jrD4hnchrr1HQQ3mrZB1zbwGKPXdpBWZXxn5pAhQ/qXmoi129iH01e7kyU8GFb+jTH6NGP0EsZoasN89OjRgxij52RsH1xTyiIGPp4dtPM8VXZiAPjvmiY7NuPzZYU4nSwbSlnEKDVg1vBCxpq/o+P8zU4nYT8rw1J/NmO0y/0Aw0idzD7azZ5G++n6fErpiM3zQ8Fv9OngOzfCHmtnz2XMmJJRPhA8UiATi3Mz6gf2UDbbp6HU+EFwCPRZ8L2FjKUs+PeE+g3+7fWOBnwgTHdnCFNXe4j7Z5i0/JlSumNhZ2Lsex2071KVIgakT043rBJQxPqCiDFGtWBW1TYLuw+ibGQnYsZhYKGcYZA7wzA6D6cDy8OMwQqO68s7S4zRD9tE1TTZie1/CwZhm7U/Y/Q5SukhnT2XUmM+GNEG9TC347zlQ8SMozJmi75p0tmUjt7sMAbsm4LN/08zhOznbbMw06S3jhkzarOlF4gxmF60/T6c6HaWV8boMRnuXR3OOvI7E6MTO2jjBepFzIAIMctQxPqAiFVXV4NHAMyMbjVN9kE63+zNzsWuYzuxYFnQJjiwLBrXidsS7Hf9ZeMRPT2sq7wH5hZtg9qmtHqzAwPG6O0Zm7nnGkb1Zj6bjKUGupsxy+zwgtQ8uh01bBRQ+oRp0hM6mllSSie1sx9sezH8CyKbdFFPp2ecDruUbu6yRWkqFNGPM6Iu3NxJHZSs2xFAqbEViHXQl8FR+8VIF+ByssRELIhZtVtbCpyS/5Xx+X9Mk50wZsyYDs02ujZ2pYvaZlimSS8wzc0HEsws2gYzGHG2t/jfPO8pc4s2UWnpSPQopT9sm10EDssNjBkwQ6tKb5inQt/8KuO0835K6bgsROxuxuh3M+srqLMRPRUx0zQrGGM/YaztRZE6yb0y+L2dIA5ZkFeYQSQz2yRI13ZVT5TSozKcyz8IwivtzJgxKvDw2CnYw2ybAb9MKT02CxF7Dk6O29dBRl1kFT9NNeamG/uvtMvTMRkeLh+Dx0s3v4V7YqUkYl3sOX0dnAZCRIVsQ/G0dwCHDvRExqzodEo3OuAahjGMMfpg8BmEOcnWt/L2DAGazdimASSD7/ysbSYYfM8Dp+m0GcCGJSSktyBCRhfl2yBiXaQf9SYUT3BSeWlbtIOMvL4ZLCOXthk0Z7RJ2+xqIaVGlzdUg80gWIpn/D24o/05CCKQGSHkQ8boZV3UQcnGEzM3rVcwvfhjFr+FIlaqIpZ+K6eWdC2BzVm3y4bufCcpNS7I8Cz4hDF6gmGMTtUBnLJlzJhuhAib2eSfUnpChgHu/YwZne3rgZD9e+NsMDOlRNPvSsDyLWLA6NGjwYLfDrw53mkT/A4G35vBLGhZxuwJZrpa1/mnJwX2iR93UAefmmbK9ODSbuqgZEWMpYV/bXAI8kcIoJDFb6GIZcJYys7q5cBi+FBKaadhnxkzrg42H+G7WfmggQV7IGQrsw2HC5b1bX+TmWAj3zSN0zuKVtFFno8M4oetZIydQunmJ20wc8p4xmWMGdUb97c2/PvkbJ8Z/O2VGX/baXQLxgwrXa725YW/NzY7ievg7yHUcHNH9ZXx/NPaO3hnfNbhgUF7dtxx9ODgJPeZDn7/XkrTy2ZKU8bHSzI+Oz+LMkBwgOs7qAPXNI1xWfw9LMWv6qoOMvJzYyQEGKN7d5If8PW8BvYWe/BbZvC3LzNmXN759yDcjnFm8N1/QGh3ZQVCEARBEARBEARBkBKlrmmVHm9uGVO/ZI2yVNfUMnrGnct6fGsQgiC9ZODAfrPcloEqxzGkeHNLp54kRUHtXWv6xV3vYeH66+uXrPlWVRKu/5e443d5rI4giEIo7TeredUY4fqfKB7LHwqntUc3gBWUukWrdhKu/5HiQn8kHC8rEwQEQdRRu3DFCOH4dygez98I13v1yCseLL6V1awFy7YUrveWcP1vlRba8ebPuuuVHcIuH4L0ReoWr6TC9d9TLGRra53WLqMdh4JwvCPzMPX8X7y5tVufPQRB8sOsu17dRjheXPnkxPU/nLV4ZfHcEB53vB3ysIz8Jt7UMnnqjX/vMholgiD5RThetXC8NxWP78/q3NasDKILQtzxrhKu/4XiZeTqeNPq4t0ARJA+wpSL7x5Q77Tuk4cDu7Xx5pasvWTyhnD8SuH6Hysu3OeiuXXMpJPP7hd2+RAEiUTiTqsed72nFY/zr4Tr/XbslCnhjfOpVz3aX7j+88L1v1ZZuLjj/a524YrNwtcgCBIe8eYWIw/73h/XNy0Pb8V1SrO/Sx4KtbZu0cqsIlkgCFI44s0tQ4TrX614vMPW0b9Fc2vhTS5Ovv5vWwnH+1D1qUXc9RLTbn++27AhCIIUHuG0jhau/4FiIftUOH7W0TaUUe+0ToUTBsWFeS/e3IKb+QhSpNTetXzLeqf16DyYXHw8c8Hywplc1C56bbBw/XWKC/G1aPbGHXPZA8VnyYsgyAbizatHCtdXbXLxRdzxuo0Rp4bKyn7C9RbAyYLSQjjea/HmFvSPRJAiZ3ztef3FEm8n5Rrg+utmLlje4wuEe8zMe7zhedjM/7z27jWjIyNHokkFgpQAdU2rKuKut1T5aszxH4ueuzB/OnDURc4A4fqtYE2vMvNxx1tQu3hl/hUYQRBlCMcbBZvyioXs05lNLSPzmOlVe+VhM39dvDmPmUYQJC/M+tWr28ed1vmK9QC2lt4/7pdLO72To9fMXLhiyzwI2Lf1jjdz6o1/31p5hhEEyTt1Tatgk3+tYl34vM5tOUx9Zpu9ucL1v1SaWcf7WrjebvVL1gzFhHWAfaD0+kDdolWVotk7WqUuBEL22dSbn95GnYA1tWwL6qg6o5iwDrAPYB+o71jE1gvXv0aJgBl7790v7nh/VO0fiQnrAPsA9oH6bpaV0+94cXDOInZq80vDcBaGnQ0FB/tAfYHrIBVT0PWW7TfrvP69FrCjLr93gHC8t1W7GGDCOsA+gH2gPhshW7Lm89p7/tX76M61bst41Zv5mLAOsA9gH6jPfjYGB4CfTrn8/p6bXEy//cVBKGDY2VBwsA/Uh1wH4N4Ub26d2mMRE653gepwtJiwDrAPYB+o752QfVm3aNWWWQtY7aIVW6l27sSEdYB9APtAfW5+lYsi22zTvV/ljtbUfsL1/6HaPxIT1gH2AewD9TkuK0/6/ZruvXum3bkaolTgMhI7HIoO9oFvi26T3/X+vf9Jyc5NLk687vH+ccf/FE0qwm8wTFgH2AfWdCRk68USb5dORUw4/nfRMh8HDw4e7AP1RVwHoFFHX37fgM0EbOad/4RYYehaVASNhAnrAPvAmq5E7Jv4En/O5rMw1/8Fbubj4MHBg32gvgTqACZcs+56deNs7Phrl8IsDE8ji6BxMGEdYB9Yk42IfRt3/AcHbbdDv8gee+wBJhWrcTMfBw8OHuwD9SVUBzDxOrH5n1tFPvtyvYYCFn6DYMI6wD6wpqciBumj/wdubGXjGJsPiQAAAABJRU5ErkJggg==";
+
+/* ============================================================
+   DONNÉES — postes du budget V03 (codes exacts), affectations
+   ============================================================ */
+const POSTES_DEFAUT = [
+["1.1","Casque personnel SIYO"],["1.2","Chaussure de sécurité personnel SIYO"],["1.3","Bottes de sécurité personnel SIYO"],
+["1.4","Chasuble tout le personnel"],["1.5","Gants personnel SIYO"],["1.6","Lunette de sécurité personnel GC"],
+["1.7","Bouchon d'oreille personnel SIYO"],["1.8","Imperméable personnel SIYO"],["1.9","Rubalise"],["1.10","Cône"],
+["1.11","Bac à ordure 50 Litre"],["1.12","Bac à ordure 100 Litre"],["1.13","Sac à poubelle"],["1.14","Grille de balisage"],
+["1.15","Boîte à pharmacie"],["1.16","Masque à poussière FFP2"],["1.17","GBA"],["1.18","GBA en Caoutchouc"],
+["1.19","Barrière de signalisation"],["1.20","Panneaux de signalisation"],
+["2.1","Location + caution Base vie 1"],["2.2","Location + caution Base vie 2"],["2.3","Location après avance Base vie 1"],
+["2.4","Location après avance Base vie 2"],["2.5","Aménagement des bases vie"],["2.6","Aménagement Base Technique"],
+["2.7","Location espace Base technique"],["2.8","Eau & électricité et entretien"],["2.9","Gardiennage chantier et base technique"],
+["2.10","Prise en charge médicale"],
+["3.1","Location véhicule de liaison CT"],["3.2","Location véhicule de liaison CC 1"],["3.3","Location véhicule de liaison CC 2"],
+["3.4","Carburant véhicule CT"],["3.5","Carburant véhicule CC 1"],["3.6","Carburant véhicule CC 2"],
+["3.7","Prime de mission Conducteur Travaux"],["3.8","Prime de mission Chef chantier 1"],["3.9","Prime de mission Chef chantier 2"],
+["3.10","Prime de mission référent HSE 1"],["3.11","Prime de mission référent HSE 2"],["3.12","Prime de mission chauffeur CT"],
+["3.13","Prime de mission chauffeur CC 1"],["3.14","Prime de mission chauffeur CC 2"],["3.15","Caisse de chantier"],
+["3.16","Mission d'encadrement technique"],["3.17","Mission de supervision générale"],
+["4.1","Achat de robinetterie et pièces spéciales"],
+["5.1","Implantation topo et état de lieu"],["5.2","Encadrement de l'équipe topo"],["5.3","Achat d'appareil Topo"],
+["5.4","Prime de mission Aide Topo"],["5.5","Étude d'exécution canalisations"],["5.6","Étude d'exécution regards"],
+["6.1","Fouille et pose conduite PEHD DN315"],["6.2","Fouille et pose conduite PVC DN225"],["6.3","Fouille et pose conduite PVC DN160"],
+["6.4","Fouille et pose conduite PVC DN110"],["6.5","Fouille et pose conduite PVC DN63"],
+["7.1","Regards type 0,80x0,80x1,00"],["7.2","Regards type 1,00x1,00x1,20"],["7.3","Regards type 1,20x1,20x1,40"],["7.4","Butées"],
+["8.1","Essais PEHD DN315"],["8.2","Essais PVC DN225"],["8.3","Essais PVC DN160"],["8.4","Essais PVC DN110"],["8.5","Essais PVC DN63"],
+["9.1","Rinçage et désinfection PEHD DN315"],["9.2","Rinçage et désinfection PVC DN225"],["9.3","Rinçage et désinfection PVC DN160"],
+["9.4","Rinçage et désinfection PVC DN110"],["9.5","Rinçage et désinfection PVC DN63"],
+["10.1","Travaux divers PEHD DN315"],["10.2","Travaux divers PVC DN225"],["10.3","Travaux divers PVC DN160"],
+["10.4","Travaux divers PVC DN110"],["10.5","Travaux divers PVC DN63"],
+["IMPREVU (3%)","Imprévus (ligne 113 du budget V03)"]
+];
+const AFFECT_DEFAUT = ["Tronçon PEHD 315","Tronçon PVC 225 & 160","Tronçon PVC 110 & 63","HSE","Base Vie","Etude","Génie Civil","Logistique"];
+const MODES = ["Espèces","Chèque","Virement"];
+const ENTETE_DEFAUT = "PROJET DE RENFORCEMENT DE L'ALIMENTATION EN EAU POTABLE DE LA VILLE\nD'ABIDJAN A PARTIR DE LA RIVIERE LA ME";
+
+function etatDefaut(){
+  return {
+    meta:{entete:ENTETE_DEFAUT, docTitre:"DEMANDE DE DECAISSEMENT SUR BUDGET",
+      docRef:"DOC-REA-001", docRev:"01", docDate:"04/01/2025",
+      piedCentre:"BUDGET PREVISIONNEL DE PROJET- REALISATION",
+      retenueDefaut:10, prochainNum:8, annee:2026},
+    postes: POSTES_DEFAUT.map(p=>({code:p[0], libelle:p[1]})),
+    axes: AFFECT_DEFAUT.slice(),
+    demandes: [
+      {id:1, num:"D-2026-001", nature:"progressive", dateCreation:"2026-04-21", objet:"Implantation topo et état de lieu — Conduites DN315, 225 et 160",
+       beneficiaire:"Kader", imputation:"5.1", axe:"Etude", interne:false, statut:"archivee", modePrevu:"Espèces", duree:"-",
+       bc:{designation:"Implantation topo et état de lieu", unite:"ml", pu:75, qte:25604},
+       receptions:[{date:"2026-04-21", designation:"Avance sur linéaire à lever (30%)", unite:"ml", pu:75, qte:7681.2, ret:false}],
+       retenuePct:0, retenueRestituee:0,
+       reglements:[{date:"2026-05-14", montant:576000, mode:"Espèces", ref:"Déc n°01", obs:""}],
+       demandeCourante:576090, dateValidation:"2026-05-14", obs:""},
+      {id:2, num:"D-2026-002", nature:"unique", dateCreation:"2026-05-18", objet:"Location Base vie 1 (caution + agence)",
+       beneficiaire:"Propriétaire base vie (via Oscar)", imputation:"2.1", axe:"Base Vie", interne:false, statut:"archivee", modePrevu:"Espèces", duree:"-",
+       lignes:[{designation:"Caution pour location 3 pièces", unite:"mois", pu:100000, qte:4},{designation:"Frais d'agence", unite:"ens", pu:30000, qte:1}],
+       reglements:[{date:"2026-05-18", montant:430000, mode:"Espèces", ref:"Déc n°01", obs:"Caution 3 pièces à 80 000/mois"}],
+       dateValidation:"2026-05-18", obs:""},
+      {id:3, num:"D-2026-003", nature:"unique", dateCreation:"2026-06-08", objet:"Prime de mission Topo — juin 2026",
+       beneficiaire:"Oscar & Jérémie", imputation:"5.4", axe:"Etude", interne:true, statut:"archivee", modePrevu:"Espèces", duree:"1 mois",
+       lignes:[{designation:"Prime du mois — Oscar", unite:"mois", pu:50000, qte:1},{designation:"Prime du mois — Jérémie", unite:"mois", pu:50000, qte:1}],
+       reglements:[{date:"2026-06-10", montant:100000, mode:"Espèces", ref:"Déc n°02", obs:""}],
+       dateValidation:"2026-06-10", obs:""},
+      {id:4, num:"D-2026-004", nature:"unique", dateCreation:"2026-07-08", objet:"Prime de mission Topo — juillet 2026",
+       beneficiaire:"Oscar & Jérémie", imputation:"5.4", axe:"Etude", interne:true, statut:"archivee", modePrevu:"Espèces", duree:"1 mois",
+       lignes:[{designation:"Prime du mois de juillet — Oscar", unite:"mois", pu:50000, qte:1},{designation:"Prime du mois de juillet — Jérémie", unite:"mois", pu:50000, qte:1}],
+       reglements:[{date:"2026-07-10", montant:100000, mode:"Espèces", ref:"Déc n°03", obs:""}],
+       dateValidation:"2026-07-10", obs:""},
+      {id:5, num:"D-2026-005", nature:"progressive", dateCreation:"2026-07-15", objet:"Étude et réalisation des plans exé (canalisations)",
+       beneficiaire:"Builthydro", imputation:"5.5", axe:"Etude", interne:false, statut:"attente", modePrevu:"Chèque", duree:"-",
+       bc:{designation:"Étude d'exécution canalisations", unite:"fft", pu:1000000, qte:1},
+       receptions:[{date:"2026-07-15", designation:"Réalisation des travaux", unite:"%", pu:1000000, qte:0.8, ret:false}],
+       retenuePct:0, retenueRestituee:0, reglements:[], demandeCourante:800000, obs:""},
+      {id:6, num:"D-2026-006", nature:"unique", dateCreation:"2026-06-04", objet:"Aménagement Base vie topo",
+       beneficiaire:"—", imputation:"2.5", axe:"Base Vie", interne:true, statut:"attente", modePrevu:"Espèces", duree:"-",
+       lignes:[{designation:"Achat de matelas", unite:"u", pu:40000, qte:1},{designation:"Achat de ventilateur", unite:"ens", pu:10000, qte:1}],
+       reglements:[], obs:""},
+      {id:7, num:"D-2026-007", nature:"unique", dateCreation:"2026-07-14", objet:"Location Base Technique (caution + avance)",
+       beneficiaire:"SIYO", imputation:"2.7", axe:"Base Vie", interne:true, statut:"attente", modePrevu:"Espèces", duree:"10 mois",
+       lignes:[{designation:"Caution + avance location 3 pièces", unite:"mois", pu:250000, qte:5},{designation:"Caution + avance location 4 pièces", unite:"mois", pu:200000, qte:5}],
+       reglements:[], obs:""}
+    ]
+  };
+}
+
+/* ============================================================
+   ÉTAT + PERSISTANCE
+   ============================================================ */
+let ETAT;
+let stockageOK = false;
+try { localStorage.setItem("_t","1"); localStorage.removeItem("_t"); stockageOK = true; } catch(e){ stockageOK = false; }
+function charger(){
+  if(stockageOK){
+    const brut = localStorage.getItem("siyo_demandes_azaguie_v4");
+    if(brut){ try { ETAT = JSON.parse(brut); return; } catch(e){} }
+  }
+  ETAT = etatDefaut();
+}
+function sauverLocal(){
+  if(stockageOK){ try{ localStorage.setItem("siyo_demandes_azaguie_v4", JSON.stringify(ETAT)); }catch(e){} }
+}
+function sauver(d, type){
+  sauverLocal();
+  if(typeof CONNEX==="undefined" || !CONNEX){ if(typeof majEtatSync==="function") majEtatSync(); return; }
+  if(type==="params" || (!d && !type)) pushOp({type:"params", id:"params"});
+  else if(type==="all") pushOp({type:"all", id:"all"});
+  else if(d) pushOp({type:"demande", id:d.id});
+}
+charger();
+
+/* ============================================================
+   OUTILS
+   ============================================================ */
+const F = n => (n==null||isNaN(n)) ? "—" : Math.round(n).toLocaleString("fr-FR").replace(/ /g," ");
+const FC = n => F(n)+" CFA";
+const DT = s => { if(!s) return "—"; const [a,m,j]=s.split("-"); return `${j}/${m}/${a}`; };
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const auj = () => new Date().toISOString().slice(0,10);
+function meta(k, defaut){ return (ETAT.meta && ETAT.meta[k]!=null) ? ETAT.meta[k] : defaut; }
+function poste(code){ const p = ETAT.postes.find(p=>p.code===code); return p ? p.libelle : "⚠ code inconnu"; }
+function totalLignes(d){ return (d.lignes||[]).reduce((s,l)=>s + (Number(l.pu)||0)*(Number(l.qte)||0), 0); }
+function totalReceptionne(d){ return (d.receptions||[]).reduce((s,l)=>s + (Number(l.pu)||0)*(Number(l.qte)||0), 0); }
+function totalPaye(d){ return (d.reglements||[]).reduce((s,r)=>s + (Number(r.montant)||0), 0); }
+function baseRetenue(d){ return (d.receptions||[]).filter(l=>l.ret!==false).reduce((s,l)=>s + (Number(l.pu)||0)*(Number(l.qte)||0), 0); }
+function retenue(d){ return baseRetenue(d) * (Number(d.retenuePct)||0)/100; }
+function ord(n){ return n===1 ? "1er" : n+"ème"; }
+function resteAPayer(d){ return totalReceptionne(d) - totalPaye(d) - retenue(d) + (Number(d.retenueRestituee)||0); }
+function montantDemande(d){ return d.nature==="unique" ? totalLignes(d) : Math.max(0, Math.round(resteAPayer(d))); }
+function delaiJours(d){
+  if(!d.reglements||!d.reglements.length) return null;
+  const dern = d.reglements[d.reglements.length-1].date;
+  return Math.round((new Date(dern) - new Date(d.dateCreation))/86400000);
+}
+function parId(id){ return ETAT.demandes.find(d=>d.id===id); }
+function telecharger(nom, contenu, type){
+  const b = new Blob([contenu], {type});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(b); a.download = nom; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ============================================================
+   EXPORT / IMPORT
+   ============================================================ */
+function exporterJSON(){
+  telecharger(`demandes-azaguie-${auj()}.json`, JSON.stringify(ETAT, null, 1), "application/json");
+}
+function importerJSON(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const nouv = JSON.parse(r.result);
+      if(!nouv.demandes || !nouv.postes) throw new Error("structure");
+      ETAT = nouv; sauver(null,"all"); voir(vueActive);
+      alert(`Chargé : ${nouv.demandes.length} demandes.`);
+    }catch(e){ alert("Fichier invalide — ce n'est pas une sauvegarde de l'appli."); }
+  };
+  r.readAsText(f); input.value = "";
+}
+function exporterCSV(){
+  const sep = ";";
+  let out = "Type"+sep+"N° demande"+sep+"Nature"+sep+"Objet"+sep+"Acteur"+sep+"Imputation"+sep+"Poste"+sep+"Affectation"+sep+"Statut"+sep+"Date création"+sep+"Montant demandé"+sep+"Date règlement"+sep+"Montant réglé"+sep+"Mode"+sep+"Réf. tranche"+sep+"Observation\n";
+  const q = s => '"'+String(s??"").replace(/"/g,'""')+'"';
+  for(const d of ETAT.demandes){
+    out += ["DEMANDE",d.num,d.nature,q(d.objet),q(d.beneficiaire),d.imputation,q(poste(d.imputation)),q(d.axe),d.statut,d.dateCreation,Math.round(montantDemande(d)),"","","","",q(d.obs||"")].join(sep)+"\n";
+    for(const r of (d.reglements||[])){
+      out += ["REGLEMENT",d.num,d.nature,q(d.objet),q(d.beneficiaire),d.imputation,q(poste(d.imputation)),q(d.axe),"","","",r.date,Math.round(r.montant),r.mode,q(r.ref||""),q(r.obs||"")].join(sep)+"\n";
+    }
+  }
+  telecharger(`registre-demandes-azaguie-${auj()}.csv`, "﻿"+out, "text/csv;charset=utf-8");
+}
+
+/* ============================================================
+   VUES
+   ============================================================ */
+let vueActive = "bord";
+let filtre = {texte:"", nature:"", imputation:"", tri:"num", sens:-1};
+function voir(v){
+  vueActive = v;
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("actif", b.dataset.vue===v));
+  const c = document.getElementById("contenu");
+  if(v==="bord") c.innerHTML = vueBord();
+  else if(v==="encours") c.innerHTML = vueListe(["attente","validee"], "Demandes en cours");
+  else if(v==="archives") c.innerHTML = vueListe(["archivee"], "Archives");
+  else if(v==="acteurs") c.innerHTML = vueActeurs();
+  else if(v==="imputations") c.innerHTML = vueImputations();
+  else if(v==="params") c.innerHTML = vueParams();
+}
+function bandeauStockage(){
+  return stockageOK ? "" :
+  `<div class="alerte-stockage">⚠ Le navigateur ne permet pas la sauvegarde automatique ici : les modifications vivent en mémoire.
+   Utilise <b>💾 Enregistrer (JSON)</b> avant de fermer, et <b>📂 Charger</b> pour reprendre.</div>`;
+}
+function vueBord(){
+  const ds = ETAT.demandes;
+  const att = ds.filter(d=>d.statut==="attente"), val = ds.filter(d=>d.statut==="validee");
+  const totAtt = att.reduce((s,d)=>s+montantDemande(d),0), totVal = val.reduce((s,d)=>s+montantDemande(d),0);
+  const totDec = ds.reduce((s,d)=>s+totalPaye(d),0);
+  const parMode = {};
+  ds.forEach(d=>(d.reglements||[]).forEach(r=>{ parMode[r.mode]=(parMode[r.mode]||0)+Number(r.montant||0); }));
+  const delais = ds.map(delaiJours).filter(x=>x!=null);
+  const delaiMoy = delais.length ? Math.round(delais.reduce((a,b)=>a+b,0)/delais.length) : null;
+  const resteProg = ds.filter(d=>d.nature==="progressive").reduce((s,d)=>s+Math.max(0,resteAPayer(d)),0);
+  return bandeauStockage()+`
+  <h2>Tableau de bord</h2>
+  <div class="grille-stats">
+    <div class="stat"><div class="lbl">En attente de validation</div><div class="val">${att.length}</div><div class="det">${F(totAtt)} FCFA demandés</div></div>
+    <div class="stat"><div class="lbl">Validées, à décaisser</div><div class="val">${val.length}</div><div class="det">${F(totVal)} FCFA à décaisser</div></div>
+    <div class="stat"><div class="lbl">Total décaissé</div><div class="val">${F(totDec)}</div><div class="det">${Object.entries(parMode).map(([m,v])=>`${m} : ${F(v)}`).join(" · ")||"—"}</div></div>
+    <div class="stat"><div class="lbl">Reste à solder (progressives)</div><div class="val">${F(resteProg)}</div><div class="det">travaux réceptionnés non payés</div></div>
+    <div class="stat"><div class="lbl">Délai moyen création → décaissement</div><div class="val">${delaiMoy==null?"—":delaiMoy+" j"}</div><div class="det">sur ${delais.length} demande(s) décaissée(s)</div></div>
+    <div class="stat"><div class="lbl">Demandes au total</div><div class="val">${ds.length}</div><div class="det">${ds.filter(d=>d.nature==="progressive").length} progressives · ${ds.filter(d=>d.nature==="unique").length} uniques</div></div>
+  </div>
+  <div class="carte"><h3 style="margin-top:0">Rappels du système</h3>
+    <div class="note">• Une demande <b>unique</b> se décaisse une fois puis part aux archives (bouton « Dupliquer » pour les récurrentes : primes, caisse…).<br>
+    • Une demande <b>progressive</b> (acteur au métré) se réactualise depuis les archives : nouvelles réceptions → nouvelle demande → décaissement → retour aux archives.<br>
+    • Les imputations sont la copie exacte des 78 postes du budget V03 (+ IMPREVU) : l'export CSV se recopie dans le registre du V03 sans re-saisie.<br>
+    • Export hebdomadaire recommandé : bouton <b>💾 Enregistrer (JSON)</b>, à ranger dans le dossier projet.</div>
+  </div>`;
+}
+function lgnDemande(d){
+  const badgeS = {attente:'<span class="badge b-attente">En attente</span>', validee:'<span class="badge b-validee">Validée</span>', archivee:'<span class="badge b-archivee">Archivée</span>'}[d.statut];
+  const badgeN = d.nature==="progressive" ? '<span class="badge b-progressive">Progressive</span>' : '<span class="badge b-unique">Unique</span>';
+  let actions = `<button class="btn sm" onclick="ouvrirFiche(${d.id})">Fiche / Imprimer</button> <button class="btn sm" onclick="ouvrirEdition(${d.id})">Modifier</button>`;
+  if(d.statut==="attente") actions += ` <button class="btn sm prim" onclick="valider(${d.id})">Marquer validée</button>`;
+  if(d.statut==="validee") actions += ` <button class="btn sm ok" onclick="ouvrirDecaissement(${d.id})">Décaisser</button>`;
+  if(d.statut==="archivee" && d.nature==="progressive") actions += ` <button class="btn sm warn" onclick="ouvrirActualisation(${d.id})">Actualiser</button>`;
+  if(d.statut==="archivee" && d.nature==="unique") actions += ` <button class="btn sm" onclick="dupliquer(${d.id})">Dupliquer</button>`;
+  actions += ` <button class="btn sm dngr" onclick="supprimer(${d.id})">✕</button>`;
+  const mnt = d.statut==="archivee" ? totalPaye(d) : montantDemande(d);
+  return `<tr>
+    <td><b>${d.num}</b><br>${badgeN}</td>
+    <td>${esc(d.objet)}<br><span class="note">${esc(d.beneficiaire)}</span></td>
+    <td>${d.imputation}<br><span class="note">${esc(poste(d.imputation))}</span></td>
+    <td>${esc(d.axe)}</td>
+    <td>${DT(d.dateCreation)}</td>
+    <td class="mont">${F(mnt)}</td>
+    <td>${badgeS}${d.statut==="archivee"&&delaiJours(d)!=null?`<br><span class="note">${delaiJours(d)} j</span>`:""}</td>
+    <td style="white-space:nowrap">${actions}</td></tr>`;
+}
+function vueListe(statuts, titre){
+  let ds = ETAT.demandes.filter(d=>statuts.includes(d.statut));
+  const t = filtre.texte.toLowerCase();
+  if(t) ds = ds.filter(d=>(d.num+" "+d.objet+" "+d.beneficiaire+" "+d.imputation+" "+poste(d.imputation)+" "+d.axe).toLowerCase().includes(t));
+  if(filtre.nature) ds = ds.filter(d=>d.nature===filtre.nature);
+  if(filtre.imputation) ds = ds.filter(d=>d.imputation===filtre.imputation);
+  const cle = {num:d=>d.num, date:d=>d.dateCreation, montant:d=>montantDemande(d), benef:d=>d.beneficiaire, imput:d=>d.imputation};
+  const k = cle[filtre.tri]||cle.num;
+  ds.sort((a,b)=>{ const x=k(a), y=k(b); return (x<y?-1:x>y?1:0)*filtre.sens; });
+  const imputsUtiles = [...new Set(ETAT.demandes.map(d=>d.imputation))].sort();
+  const total = ds.reduce((s,d)=>s+(statuts.includes("archivee")?totalPaye(d):montantDemande(d)),0);
+  return bandeauStockage()+`
+  <h2>${titre} <span class="note">(${ds.length} — total ${F(total)} FCFA)</span></h2>
+  <div class="filtres">
+    <input type="text" placeholder="Rechercher (objet, acteur, n°, imputation…)" value="${esc(filtre.texte)}"
+      oninput="filtre.texte=this.value; voir(vueActive); document.querySelector('.filtres input').focus(); const v=this.value; const inp=document.querySelector('.filtres input'); inp.setSelectionRange(v.length,v.length)">
+    <select onchange="filtre.nature=this.value; voir(vueActive)">
+      <option value="">Toutes natures</option>
+      <option value="unique" ${filtre.nature==="unique"?"selected":""}>Unique</option>
+      <option value="progressive" ${filtre.nature==="progressive"?"selected":""}>Progressive</option>
+    </select>
+    <select onchange="filtre.imputation=this.value; voir(vueActive)">
+      <option value="">Toutes imputations</option>
+      ${imputsUtiles.map(c=>`<option value="${c}" ${filtre.imputation===c?"selected":""}>${c} — ${esc(poste(c))}</option>`).join("")}
+    </select>
+    <button class="btn sm" onclick="filtre={texte:'',nature:'',imputation:'',tri:'num',sens:-1}; voir(vueActive)">Réinitialiser</button>
+  </div>
+  <table class="liste"><thead><tr>
+    <th onclick="trier('num')">N° ⇅</th><th>Objet / Acteur</th><th onclick="trier('imput')">Imputation ⇅</th>
+    <th>Affectation</th><th onclick="trier('date')">Date ⇅</th><th onclick="trier('montant')" style="text-align:right">Montant ⇅</th><th>Statut</th><th>Actions</th>
+  </tr></thead><tbody>
+    ${ds.map(lgnDemande).join("") || `<tr><td colspan="8" style="text-align:center;color:#889;padding:22px">Aucune demande ici.</td></tr>`}
+  </tbody></table>`;
+}
+function trier(t){ if(filtre.tri===t) filtre.sens*=-1; else {filtre.tri=t; filtre.sens=1;} voir(vueActive); }
+
+function vueActeurs(){
+  const grp = {};
+  for(const d of ETAT.demandes){
+    const b = d.beneficiaire || "—";
+    grp[b] = grp[b] || {receptionne:0, paye:0, retenue:0, restitue:0, reste:0, demandes:0, prog:false};
+    grp[b].demandes++;
+    grp[b].paye += totalPaye(d);
+    if(d.nature==="progressive"){
+      grp[b].prog = true;
+      grp[b].receptionne += totalReceptionne(d);
+      grp[b].retenue += retenue(d);
+      grp[b].restitue += Number(d.retenueRestituee)||0;
+      grp[b].reste += resteAPayer(d);
+    }
+  }
+  const noms = Object.keys(grp).sort((a,b)=>grp[b].paye-grp[a].paye);
+  return `<h2>Point des acteurs (prestataires, fournisseurs, interne SIYO)</h2>
+  <p class="note">Calculé automatiquement depuis les demandes. « Reste à solder » = réceptionné − payé − retenue + retenue restituée (progressives uniquement). Un reste négatif = avance versée non encore couverte par des travaux.</p>
+  <table class="liste"><thead><tr><th>Acteur</th><th style="text-align:right">Demandes</th>
+  <th style="text-align:right">Travaux réceptionnés</th><th style="text-align:right">Total payé</th>
+  <th style="text-align:right">Retenue en cours</th><th style="text-align:right">Reste à solder</th></tr></thead><tbody>
+  ${noms.map(n=>{const g=grp[n]; return `<tr><td><b>${esc(n)}</b></td><td class="mont">${g.demandes}</td>
+    <td class="mont">${g.prog?F(g.receptionne):"—"}</td><td class="mont">${F(g.paye)}</td>
+    <td class="mont">${g.prog?F(g.retenue-g.restitue):"—"}</td>
+    <td class="mont" style="${g.reste>0.5?'color:var(--rouge);font-weight:700':''}">${g.prog?F(g.reste):"—"}</td></tr>`;}).join("")}
+  </tbody></table>`;
+}
+function vueImputations(){
+  const grp = {};
+  for(const d of ETAT.demandes){
+    const c = d.imputation;
+    grp[c] = grp[c] || {paye:0, attente:0, n:0};
+    grp[c].n++;
+    grp[c].paye += totalPaye(d);
+    if(d.statut!=="archivee") grp[c].attente += montantDemande(d);
+  }
+  const codes = Object.keys(grp).sort();
+  const totP = codes.reduce((s,c)=>s+grp[c].paye,0), totA = codes.reduce((s,c)=>s+grp[c].attente,0);
+  return `<h2>Totaux par imputation budgétaire</h2>
+  <p class="note">Copie exacte des codes du budget V03 — à rapprocher de la colonne « Total dépense » du V03 (le budget Excel reste la référence).</p>
+  <table class="liste"><thead><tr><th>Code</th><th>Poste</th><th style="text-align:right">Demandes</th>
+  <th style="text-align:right">Décaissé</th><th style="text-align:right">En cours (non décaissé)</th></tr></thead><tbody>
+  ${codes.map(c=>`<tr><td><b>${c}</b></td><td>${esc(poste(c))}</td><td class="mont">${grp[c].n}</td>
+    <td class="mont">${F(grp[c].paye)}</td><td class="mont">${F(grp[c].attente)}</td></tr>`).join("")}
+  <tr style="font-weight:700;background:#f4f6f8"><td></td><td>TOTAL</td><td></td><td class="mont">${F(totP)}</td><td class="mont">${F(totA)}</td></tr>
+  </tbody></table>`;
+}
+function vueParams(){
+  return `<h2>Paramètres</h2>
+  <div class="carte">
+    <h3 style="margin-top:0">Connexion Google Sheet (exploitation en ligne)</h3>
+    <div class="form-grille">
+      <div class="champ"><label>URL du script Google (se termine par /exec)</label><input id="cx-url" value="${CONNEX?esc(CONNEX.url):""}" placeholder="https://script.google.com/macros/s/…/exec"></div>
+      <div class="champ"><label>Clé d'accès</label><input id="cx-token" type="password" value="${CONNEX?esc(CONNEX.token):""}"></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn prim" onclick="connecter()">Connecter / Tester</button>
+      <button class="btn" onclick="migrerVersSheet()">⬆ Envoyer le local vers le Sheet (1ère mise en service)</button>
+      <button class="btn" onclick="tirer()">⬇ Recharger depuis le Sheet</button>
+      <button class="btn dngr" onclick="deconnecter()">Se déconnecter</button>
+    </div>
+    <p class="note">La clé d'accès reste dans CE navigateur — chaque utilisateur la saisit une fois. Ne jamais l'écrire dans le code publié sur GitHub.</p>
+  </div>
+  <div class="carte">
+    <h3 style="margin-top:0">Cartouche documentaire (modèle validé)</h3>
+    <div class="form-grille">
+      <div class="champ"><label>Titre du document</label><input id="p-titre" value="${esc(meta('docTitre','DEMANDE DE DECAISSEMENT SUR BUDGET'))}"></div>
+      <div class="champ"><label>Référence</label><input id="p-ref" value="${esc(meta('docRef','DOC-REA-001'))}"></div>
+      <div class="champ"><label>Révision</label><input id="p-rev" value="${esc(meta('docRev','01'))}"></div>
+      <div class="champ"><label>Date de création du modèle</label><input id="p-datec" value="${esc(meta('docDate','04/01/2025'))}"></div>
+      <div class="champ"><label>Pied de page central</label><input id="p-piedc" value="${esc(meta('piedCentre','BUDGET PREVISIONNEL DE PROJET- REALISATION'))}"></div>
+      <div class="champ"><label>Retenue de garantie par défaut (%)</label><input id="p-retenue" type="number" value="${meta('retenueDefaut',10)}"></div>
+    </div>
+    <h3>Bande projet (en tête du corps de la fiche)</h3>
+    <textarea id="p-entete" rows="2" style="width:100%">${esc(ETAT.meta.entete)}</textarea>
+    <h3>Affectations (une par ligne)</h3>
+    <textarea id="p-axes" rows="9" style="width:100%">${esc(ETAT.axes.join("\n"))}</textarea>
+    <h3>Postes budgétaires (code | libellé — copie du budget V03, à tenir synchrone avec lui)</h3>
+    <textarea id="p-postes" rows="12" style="width:100%;font-family:Consolas,monospace;font-size:12px">${esc(ETAT.postes.map(p=>p.code+" | "+p.libelle).join("\n"))}</textarea>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn prim" onclick="sauverParams()">Enregistrer les paramètres</button>
+      <button class="btn" onclick="exporterCSV()">⬇ Export CSV (registre complet)</button>
+      <button class="btn dngr" onclick="reinitialiser()">Réinitialiser l'appli (données de départ)</button>
+    </div>
+  </div>`;
+}
+function sauverParams(){
+  ETAT.meta.docTitre = document.getElementById("p-titre").value;
+  ETAT.meta.docRef = document.getElementById("p-ref").value;
+  ETAT.meta.docRev = document.getElementById("p-rev").value;
+  ETAT.meta.docDate = document.getElementById("p-datec").value;
+  ETAT.meta.piedCentre = document.getElementById("p-piedc").value;
+  ETAT.meta.entete = document.getElementById("p-entete").value;
+  ETAT.meta.retenueDefaut = Number(document.getElementById("p-retenue").value)||0;
+  ETAT.axes = document.getElementById("p-axes").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  ETAT.postes = document.getElementById("p-postes").value.split("\n").map(l=>{
+    const i = l.indexOf("|"); if(i<0) return null;
+    return {code:l.slice(0,i).trim(), libelle:l.slice(i+1).trim()};
+  }).filter(Boolean);
+  sauver(null,"params"); alert("Paramètres enregistrés."); voir("params");
+}
+function reinitialiser(){
+  if(confirm("Remettre l'appli à son état de départ ? Les demandes saisies seront perdues (pense à exporter avant).")){
+    ETAT = etatDefaut(); sauver(null,"all"); voir("bord");
+  }
+}
+
+/* ============================================================
+   MODALES : création / édition
+   ============================================================ */
+function ouvrirModale(html){ document.getElementById("modale").innerHTML = html; document.getElementById("voile").classList.add("ouvert"); }
+function fermerModale(){ document.getElementById("voile").classList.remove("ouvert"); }
+document.getElementById("voile").addEventListener("click", e=>{ if(e.target.id==="voile") fermerModale(); });
+
+function optionsPostes(sel){
+  return ETAT.postes.map(p=>`<option value="${esc(p.code)}" ${p.code===sel?"selected":""}>${esc(p.code)} — ${esc(p.libelle)}</option>`).join("");
+}
+function optionsAxes(sel){ return ETAT.axes.map(a=>`<option ${a===sel?"selected":""}>${esc(a)}</option>`).join(""); }
+function optionsModes(sel){ return MODES.map(m=>`<option ${m===sel?"selected":""}>${m}</option>`).join(""); }
+
+let lignesTmp = [];
+let recEditTmp = [];
+let regEditTmp = [];
+function ouvrirNouvelle(){ ouvrirFormulaire(null); }
+function ouvrirEdition(id){ ouvrirFormulaire(parId(id)); }
+function ouvrirFormulaire(d){
+  const neuf = !d;
+  lignesTmp = d && d.nature==="unique" ? JSON.parse(JSON.stringify(d.lignes||[])) : (neuf ? [{designation:"",unite:"",pu:"",qte:""}] : []);
+  recEditTmp = d && d.nature==="progressive" ? JSON.parse(JSON.stringify(d.receptions||[])) : [];
+  regEditTmp = d ? JSON.parse(JSON.stringify(d.reglements||[])) : [];
+  const nature = d ? d.nature : "unique";
+  ouvrirModale(`
+  <h2>${neuf?"Nouvelle demande":"Modifier "+d.num}</h2>
+  <div class="form-grille">
+    <div class="champ"><label>Nature</label>
+      <select id="f-nature" ${neuf?"":"disabled"} onchange="basculerNature()">
+        <option value="unique" ${nature==="unique"?"selected":""}>Unique (payée une fois)</option>
+        <option value="progressive" ${nature==="progressive"?"selected":""}>Progressive (acteur au métré)</option>
+      </select></div>
+    <div class="champ"><label>Date</label><input id="f-date" type="date" value="${d?d.dateCreation:auj()}"></div>
+    <div class="champ"><label>Acteur (prestataire, fournisseur, SIYO…)</label><input id="f-benef" value="${d?esc(d.beneficiaire):""}" placeholder="ex : Kader"></div>
+    <div class="champ"><label>Imputation budgétaire</label><select id="f-imput">${optionsPostes(d?d.imputation:"")}</select></div>
+    <div class="champ"><label>Affectation</label><select id="f-axe">${optionsAxes(d?d.axe:ETAT.axes[0])}</select></div>
+    <div class="champ"><label>Mode de paiement prévu</label><select id="f-mode">${optionsModes(d?d.modePrevu:"Espèces")}</select></div>
+    <div class="champ"><label>Durée prévisionnelle des travaux</label><input id="f-duree" value="${d?esc(d.duree||""):""}" placeholder="ex : 45 jours"></div>
+    <div class="champ"><label>Signataires</label>
+      <select id="f-interne">
+        <option value="0" ${d&&!d.interne?"selected":!d?"selected":""}>Externe : Chef Projet / Dir. Technique / Prestataire</option>
+        <option value="1" ${d&&d.interne?"selected":""}>Interne : Dir. Projet / Dir. Technique / Dir. Général</option>
+      </select></div>
+  </div>
+  <div class="champ" style="margin-top:10px"><label>Objet de la demande</label><input id="f-objet" value="${d?esc(d.objet):""}" placeholder="ex : Fouille et pose de conduite DN63 — Tronçon PVC 110 & 63"></div>
+  <div id="f-zone-nature"></div>
+  <div id="f-zone-regl"></div>
+  <div class="champ" style="margin-top:10px"><label>Observation</label><input id="f-obs" value="${d?esc(d.obs||""):""}"></div>
+  <div class="actions">
+    <button class="btn" onclick="fermerModale()">Annuler</button>
+    <button class="btn prim" onclick="enregistrerDemande(${d?d.id:"null"})">${neuf?"Créer la demande":"Enregistrer"}</button>
+  </div>`);
+  basculerNature(d);
+  rendreRegEdit(neuf);
+}
+function basculerNature(d){
+  const nature = document.getElementById("f-nature").value;
+  const z = document.getElementById("f-zone-nature");
+  if(nature==="unique"){
+    z.innerHTML = `<h3>Lignes de la demande</h3><table class="lignes" id="t-lignes"><thead>
+      <tr><th style="width:42%">Désignation</th><th>Unité</th><th>P.U. (FCFA)</th><th>Qté</th><th style="text-align:right">Montant</th><th></th></tr></thead>
+      <tbody></tbody></table>
+      <button class="btn sm" style="margin-top:6px" onclick="lignesTmp.push({designation:'',unite:'',pu:'',qte:''});rendreLignes()">+ Ajouter une ligne</button>
+      <div style="text-align:right;font-weight:700;margin-top:8px" id="t-total"></div>`;
+    rendreLignes();
+  } else {
+    const bc = d && d.bc ? d.bc : {designation:"",unite:"ml",pu:"",qte:""};
+    z.innerHTML = `<h3>Valeur totale de la prestation (bon de commande)</h3>
+    <div class="form-grille">
+      <div class="champ"><label>Désignation prestation</label><input id="f-bc-des" value="${esc(bc.designation)}"></div>
+      <div class="champ"><label>Unité</label><input id="f-bc-unite" value="${esc(bc.unite)}"></div>
+      <div class="champ"><label>P.U. (FCFA)</label><input id="f-bc-pu" type="number" step="any" value="${bc.pu}"></div>
+      <div class="champ"><label>Quantité totale</label><input id="f-bc-qte" type="number" step="any" value="${bc.qte}"></div>
+      <div class="champ"><label>Retenue de garantie (%)</label><input id="f-retenue" type="number" step="any" value="${d&&d.retenuePct!=null?d.retenuePct:meta('retenueDefaut',10)}"></div>
+      <div class="champ"><label>Libellé de la retenue (sur la fiche)</label><input id="f-ret-lbl" value="${d?esc(d.retenueLbl||"Retenue pour essai de pression"):"Retenue pour essai de pression"}"></div>
+      <div class="champ"><label>Valeur de la demande (auto = montant dû)</label><input disabled style="font-weight:700;background:#f4f6f8" value="${d?F(montantDemande(d))+" FCFA":"calculée depuis les travaux saisis ci-dessous"}"></div>
+    </div>
+    <h3>Travaux réceptionnés / avances (cumul — modifiable pour reconfigurer une ancienne demande)</h3>
+    <table class="lignes" id="t-rec-edit"><thead><tr><th>Date</th><th style="width:30%">Désignation</th><th>Unité</th><th>P.U.</th><th>Qté</th><th style="text-align:right">Montant</th><th title="Ligne soumise à la retenue de garantie ?">Retenue ?</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn sm" style="margin-top:6px" onclick="recEditTmp.push({date:auj(),designation:'',unite:'',pu:'',qte:'',ret:true});rendreRecEdit()">+ Ajouter une ligne</button>
+    <p class="note">Au quotidien, les nouvelles réceptions passent par « Actualiser » et les paiements par « Décaisser » — ce tableau sert surtout à corriger ou reconfigurer.</p>`;
+    rendreRecEdit();
+  }
+}
+function rendreRegEdit(neuf){
+  const z = document.getElementById("f-zone-regl"); if(!z) return;
+  if(neuf){ z.innerHTML = ""; return; }
+  z.innerHTML = `<h3>Règlements déjà effectués (réalité comptable — modifiable)</h3>
+  <table class="lignes" id="t-reg-edit"><thead><tr><th>Date</th><th style="width:16%">Montant payé</th><th>Mode</th><th>Réf. tranche</th><th style="width:26%">Observation</th><th></th></tr></thead><tbody></tbody></table>
+  <button class="btn sm" style="margin-top:6px" onclick="regEditTmp.push({date:auj(),montant:'',mode:'Espèces',ref:'',obs:''});rendreRegEditLignes()">+ Ajouter un règlement</button>
+  <p class="note">Ce tableau doit refléter ce que la comptabilité a réellement décaissé (montants arrondis compris). Si tu corriges un montant ici, corrige aussi la ligne correspondante dans le registre du budget V03, sinon les deux fichiers divergent.</p>`;
+  rendreRegEditLignes();
+}
+function rendreRegEditLignes(){
+  const tb = document.querySelector("#t-reg-edit tbody"); if(!tb) return;
+  tb.innerHTML = regEditTmp.map((r,i)=>`<tr>
+    <td><input type="date" value="${r.date||""}" oninput="regEditTmp[${i}].date=this.value"></td>
+    <td><input type="number" step="any" value="${r.montant}" oninput="regEditTmp[${i}].montant=this.value"></td>
+    <td><select onchange="regEditTmp[${i}].mode=this.value">${MODES.map(m=>`<option ${m===(r.mode||"Espèces")?"selected":""}>${m}</option>`).join("")}</select></td>
+    <td><input value="${esc(r.ref||"")}" placeholder="Déc n°…" oninput="regEditTmp[${i}].ref=this.value"></td>
+    <td><input value="${esc(r.obs||"")}" oninput="regEditTmp[${i}].obs=this.value"></td>
+    <td><button class="btn sm dngr" onclick="regEditTmp.splice(${i},1);rendreRegEditLignes()">✕</button></td></tr>`).join("")
+    || `<tr><td colspan="6" style="color:#889;padding:8px">Aucun règlement effectué pour l'instant.</td></tr>`;
+}
+function rendreRecEdit(){
+  const tb = document.querySelector("#t-rec-edit tbody"); if(!tb) return;
+  tb.innerHTML = recEditTmp.map((l,i)=>`<tr>
+    <td><input type="date" value="${l.date||""}" oninput="recEditTmp[${i}].date=this.value"></td>
+    <td><input value="${esc(l.designation)}" oninput="recEditTmp[${i}].designation=this.value"></td>
+    <td><input value="${esc(l.unite)}" oninput="recEditTmp[${i}].unite=this.value"></td>
+    <td><input type="number" step="any" value="${l.pu}" oninput="recEditTmp[${i}].pu=this.value;majRecEditTot()"></td>
+    <td><input type="number" step="any" value="${l.qte}" oninput="recEditTmp[${i}].qte=this.value;majRecEditTot()"></td>
+    <td class="tot">${F((Number(l.pu)||0)*(Number(l.qte)||0))}</td>
+    <td style="text-align:center"><input type="checkbox" style="width:auto" ${l.ret!==false?"checked":""} onchange="recEditTmp[${i}].ret=this.checked"></td>
+    <td><button class="btn sm dngr" onclick="recEditTmp.splice(${i},1);rendreRecEdit()">✕</button></td></tr>`).join("")
+    || `<tr><td colspan="8" style="color:#889;padding:8px">Aucune réception enregistrée (cas d'une avance avant travaux).</td></tr>`;
+}
+function majRecEditTot(){
+  document.querySelectorAll("#t-rec-edit tbody .tot").forEach((td,i)=>{ td.textContent = F((Number(recEditTmp[i].pu)||0)*(Number(recEditTmp[i].qte)||0)); });
+}
+function rendreLignes(){
+  const tb = document.querySelector("#t-lignes tbody"); if(!tb) return;
+  tb.innerHTML = lignesTmp.map((l,i)=>`<tr>
+    <td><input value="${esc(l.designation)}" oninput="lignesTmp[${i}].designation=this.value"></td>
+    <td><input value="${esc(l.unite)}" oninput="lignesTmp[${i}].unite=this.value"></td>
+    <td><input type="number" step="any" value="${l.pu}" oninput="lignesTmp[${i}].pu=this.value;majTotal()"></td>
+    <td><input type="number" step="any" value="${l.qte}" oninput="lignesTmp[${i}].qte=this.value;majTotal()"></td>
+    <td class="tot">${F((Number(l.pu)||0)*(Number(l.qte)||0))}</td>
+    <td><button class="btn sm dngr" onclick="lignesTmp.splice(${i},1);rendreLignes()">✕</button></td></tr>`).join("");
+  majTotal();
+}
+function majTotal(){
+  const t = lignesTmp.reduce((s,l)=>s+(Number(l.pu)||0)*(Number(l.qte)||0),0);
+  const el = document.getElementById("t-total"); if(el) el.textContent = "TOTAL : "+F(t)+" FCFA";
+  document.querySelectorAll("#t-lignes tbody .tot").forEach((td,i)=>{ td.textContent = F((Number(lignesTmp[i].pu)||0)*(Number(lignesTmp[i].qte)||0)); });
+}
+function enregistrerDemande(id){
+  const g = x => document.getElementById(x).value;
+  const nature = g("f-nature");
+  if(!g("f-objet").trim()){ alert("L'objet de la demande est obligatoire."); return; }
+  if(!g("f-benef").trim()){ alert("L'acteur est obligatoire."); return; }
+  let d;
+  if(id==null){
+    const num = `D-${ETAT.meta.annee}-${String(ETAT.meta.prochainNum).padStart(3,"0")}`;
+    ETAT.meta.prochainNum++;
+    d = {id:Date.now(), num, nature, reglements:[], statut:"attente", retenueRestituee:0};
+    ETAT.demandes.push(d);
+  } else { d = parId(id); }
+  d.dateCreation = g("f-date"); d.objet = g("f-objet").trim(); d.beneficiaire = g("f-benef").trim();
+  d.imputation = g("f-imput"); d.axe = g("f-axe"); d.modePrevu = g("f-mode");
+  d.duree = g("f-duree").trim();
+  d.interne = g("f-interne")==="1"; d.obs = g("f-obs");
+  if(id!=null){
+    d.reglements = regEditTmp.filter(r=>Number(r.montant))
+      .map(r=>({date:r.date, montant:Number(r.montant)||0, mode:r.mode||"Espèces", ref:(r.ref||"").trim(), obs:(r.obs||"").trim()}));
+  }
+  if(nature==="unique"){
+    d.lignes = lignesTmp.filter(l=>l.designation||l.pu||l.qte).map(l=>({designation:l.designation,unite:l.unite,pu:Number(l.pu)||0,qte:Number(l.qte)||0}));
+    if(!d.lignes.length){ alert("Ajoute au moins une ligne."); return; }
+  } else {
+    d.bc = {designation:g("f-bc-des"), unite:g("f-bc-unite"), pu:Number(g("f-bc-pu"))||0, qte:Number(g("f-bc-qte"))||0};
+    d.retenuePct = Number(g("f-retenue"))||0;
+    d.retenueLbl = g("f-ret-lbl").trim();
+    d.receptions = recEditTmp.filter(l=>l.designation||Number(l.pu)||Number(l.qte))
+      .map(l=>({date:l.date,designation:l.designation,unite:l.unite,pu:Number(l.pu)||0,qte:Number(l.qte)||0,ret:l.ret!==false}));
+  }
+  sauver(d); fermerModale(); voir(vueActive==="bord"?"encours":vueActive);
+}
+function valider(id){
+  const d = parId(id);
+  d.statut = "validee"; d.dateValidation = auj();
+  sauver(d); voir(vueActive);
+}
+function supprimer(id){
+  const d = parId(id);
+  if(confirm(`Supprimer définitivement ${d.num} — ${d.objet} ?`)){
+    ETAT.demandes = ETAT.demandes.filter(x=>x.id!==id); sauverLocal(); if(typeof CONNEX!=="undefined" && CONNEX) pushOp({type:"delete", id:id}); voir(vueActive);
+  }
+}
+function dupliquer(id){
+  const s = parId(id);
+  const num = `D-${ETAT.meta.annee}-${String(ETAT.meta.prochainNum).padStart(3,"0")}`;
+  ETAT.meta.prochainNum++;
+  const c = JSON.parse(JSON.stringify(s));
+  c.id = Date.now(); c.num = num; c.statut = "attente"; c.dateCreation = auj();
+  c.reglements = []; delete c.dateValidation;
+  ETAT.demandes.push(c); sauver(c); voir("encours");
+  alert(`${num} créée à partir de ${s.num} — pense à ajuster l'objet (mois, période…).`);
+}
+
+/* ---------- décaissement ---------- */
+function ouvrirDecaissement(id){
+  const d = parId(id);
+  ouvrirModale(`
+  <h2>Décaissement — ${d.num}</h2>
+  <p>${esc(d.objet)} · <b>${esc(d.beneficiaire)}</b> · montant demandé : <b>${F(montantDemande(d))} FCFA</b></p>
+  <div class="form-grille">
+    <div class="champ"><label>Date du décaissement</label><input id="dec-date" type="date" value="${auj()}"></div>
+    <div class="champ"><label>Montant décaissé (FCFA)</label><input id="dec-mnt" type="number" step="any" value="${Math.round(montantDemande(d))}"></div>
+    <div class="champ"><label>Mode</label><select id="dec-mode">${optionsModes(d.modePrevu)}</select></div>
+    <div class="champ"><label>Réf. tranche (ex : Déc n°04)</label><input id="dec-ref" placeholder="Déc n°…"></div>
+  </div>
+  <div class="champ" style="margin-top:10px"><label>Observation</label><input id="dec-obs"></div>
+  <div class="actions">
+    <button class="btn" onclick="fermerModale()">Annuler</button>
+    <button class="btn ok" onclick="confirmerDecaissement(${d.id})">Confirmer le décaissement → Archives</button>
+  </div>`);
+}
+function confirmerDecaissement(id){
+  const d = parId(id);
+  const mnt = Number(document.getElementById("dec-mnt").value);
+  if(!mnt){ alert("Montant obligatoire."); return; }
+  const demande = montantDemande(d);
+  if(demande && Math.abs(mnt-demande)>0.5 && !confirm(`Le montant décaissé (${F(mnt)}) diffère du montant demandé (${F(demande)}). Confirmer quand même ?`)) return;
+  d.reglements.push({date:document.getElementById("dec-date").value, montant:mnt,
+    mode:document.getElementById("dec-mode").value, ref:document.getElementById("dec-ref").value.trim(),
+    obs:document.getElementById("dec-obs").value.trim()});
+  d.statut = "archivee";
+  sauver(d); fermerModale(); voir(vueActive);
+}
+
+/* ---------- actualisation (progressive) ---------- */
+let recTmp = [];
+function ouvrirActualisation(id){
+  const d = parId(id);
+  recTmp = JSON.parse(JSON.stringify(d.receptions||[]));
+  if(!recTmp.length) recTmp = [{date:auj(), designation:"", unite:d.bc?d.bc.unite:"ml", pu:d.bc?d.bc.pu:"", qte:"", ret:true}];
+  ouvrirModale(`
+  <h2>Actualiser — ${d.num}</h2>
+  <p>${esc(d.objet)} · <b>${esc(d.beneficiaire)}</b></p>
+  <table class="liste"><tr>
+    <td>Réceptionné à ce jour<br><b>${F(totalReceptionne(d))}</b></td>
+    <td>Payé à ce jour<br><b>${F(totalPaye(d))}</b></td>
+    <td>Retenue (${d.retenuePct||0}%)<br><b>${F(retenue(d))}</b></td>
+    <td>Reste à payer<br><b>${F(resteAPayer(d))}</b></td>
+  </tr></table>
+  <h3>Travaux réceptionnés — cumul à ce jour</h3>
+  <p class="note" style="margin:2px 0 6px">Si c'est le même travail qui avance : <b>modifie simplement la quantité</b> de la ligne existante (le cumul). N'ajoute une ligne que pour une nouvelle prestation (terrain difficile, essai, sable…).</p>
+  <table class="lignes" id="t-rec"><thead><tr><th>Date</th><th style="width:30%">Désignation</th><th>Unité</th><th>P.U.</th><th>Qté</th><th style="text-align:right">Montant</th><th title="Cette ligne est-elle soumise à la retenue de garantie ?">Retenue ?</th><th></th></tr></thead><tbody></tbody></table>
+  <button class="btn sm" style="margin-top:6px" onclick="recTmp.push({date:auj(),designation:'',unite:'',pu:'',qte:'',ret:true});rendreRec()">+ Ajouter</button>
+  <div class="form-grille" style="margin-top:12px">
+    <div class="champ"><label>Retenue restituée (cumul, FCFA)</label><input id="act-restit" type="number" step="any" value="${d.retenueRestituee||0}" oninput="majActMnt()"></div>
+    <div class="champ"><label>Mode de paiement de cette demande</label><select id="act-mode">${optionsModes(d.modePrevu)}</select></div>
+    <div class="champ"><label>Valeur de la demande (auto = montant dû)</label><input id="act-mnt" disabled style="font-weight:700;background:#f4f6f8"></div>
+  </div>
+  <p class="note">La valeur de la demande est calculée automatiquement : travaux réalisés − payé − retenue + restitution. Seul le mode de paiement est à préciser.</p>
+  <div class="actions">
+    <button class="btn" onclick="fermerModale()">Annuler</button>
+    <button class="btn warn" onclick="confirmerActualisation(${d.id})">Créer la nouvelle demande → En attente</button>
+  </div>`);
+  actId = id;
+  rendreRec(id);
+  majActMnt();
+}
+let actId = null;
+function majActMnt(){
+  const el = document.getElementById("act-mnt");
+  if(!el || actId==null) return;
+  const dd = parId(actId);
+  const tot = recTmp.reduce((s,l)=>s+(Number(l.pu)||0)*(Number(l.qte)||0),0);
+  const totRet = recTmp.filter(l=>l.ret!==false).reduce((s,l)=>s+(Number(l.pu)||0)*(Number(l.qte)||0),0);
+  const restit = Number(document.getElementById("act-restit")?.value)||0;
+  el.value = F(Math.max(0, Math.round(tot - totalPaye(dd) - totRet*(Number(dd.retenuePct)||0)/100 + restit)))+" FCFA";
+}
+function rendreRec(){
+  const tb = document.querySelector("#t-rec tbody"); if(!tb) return;
+  tb.innerHTML = recTmp.map((l,i)=>`<tr>
+    <td><input type="date" value="${l.date}" oninput="recTmp[${i}].date=this.value"></td>
+    <td><input value="${esc(l.designation)}" placeholder="ex : Linéaire réceptionné" oninput="recTmp[${i}].designation=this.value"></td>
+    <td><input value="${esc(l.unite)}" oninput="recTmp[${i}].unite=this.value"></td>
+    <td><input type="number" step="any" value="${l.pu}" oninput="recTmp[${i}].pu=this.value;rendreRecTot()"></td>
+    <td><input type="number" step="any" value="${l.qte}" oninput="recTmp[${i}].qte=this.value;rendreRecTot()"></td>
+    <td class="tot">${F((Number(l.pu)||0)*(Number(l.qte)||0))}</td>
+    <td style="text-align:center"><input type="checkbox" style="width:auto" ${l.ret!==false?"checked":""} onchange="recTmp[${i}].ret=this.checked"></td>
+    <td><button class="btn sm dngr" onclick="recTmp.splice(${i},1);rendreRec();majActMnt()">✕</button></td></tr>`).join("");
+}
+function rendreRecTot(){
+  document.querySelectorAll("#t-rec tbody .tot").forEach((td,i)=>{ td.textContent = F((Number(recTmp[i].pu)||0)*(Number(recTmp[i].qte)||0)); });
+  majActMnt();
+}
+function confirmerActualisation(id){
+  const d = parId(id);
+  d.receptions = recTmp.filter(l=>(Number(l.pu)||0)*(Number(l.qte)||0)>0 || l.designation)
+    .map(l=>({date:l.date,designation:l.designation,unite:l.unite,pu:Number(l.pu)||0,qte:Number(l.qte)||0,ret:l.ret!==false}));
+  d.retenueRestituee = Number(document.getElementById("act-restit").value)||0;
+  d.modePrevu = document.getElementById("act-mode").value;
+  if(montantDemande(d)<=0 && !confirm("Le montant dû calculé est 0 — créer quand même la demande ?")) return;
+  d.statut = "attente"; d.dateCreation = auj(); delete d.dateValidation;
+  sauver(d); fermerModale(); voir("encours");
+}
+
+/* ============================================================
+   FICHE IMPRIMABLE — modèle officiel DOC-REA-001
+   ============================================================ */
+function ouvrirFiche(id){
+  const d = parId(id);
+  document.getElementById("zone-fiche").innerHTML = rendreFiche(d);
+  ouvrirModale(`
+  <h2>Fiche ${d.num}</h2>
+  <div style="max-height:63vh;overflow:auto;border:1px solid var(--bord);background:#e8eaee;padding:10px">${rendreFiche(d)}</div>
+  <div class="actions">
+    <span class="note" style="margin-right:auto">Impression : dans la boîte Chrome/Edge, décocher « En-têtes et pieds de page ».</span>
+    <button class="btn" onclick="fermerModale()">Fermer</button>
+    <button class="btn prim" onclick="imprimerFiche(${d.id})">🖨 Imprimer / PDF</button>
+  </div>`);
+}
+function imprimerFiche(id){
+  const d = parId(id);
+  document.getElementById("zone-fiche").innerHTML = rendreFiche(d);
+  document.body.classList.add("mode-impression");
+  window.print();
+  setTimeout(()=>document.body.classList.remove("mode-impression"), 400);
+}
+function rendreFiche(d){
+  const sigs = d.interne
+    ? ["DIRECTEUR DE PROJET","DIRECTEUR TECHNIQUE","DIRECTEUR GENERAL"]
+    : ["CHEF PROJET","DIRECTEUR TECHNIQUE","PRESTATAIRE"];
+  const mnt = montantDemande(d);
+  const modes = {"Espèces":0,"Chèque":0,"Virement":0};
+  modes[d.modePrevu] = mnt;
+  /* bloc Valeur du BC */
+  let blocBC;
+  if(d.nature==="progressive" && d.bc){
+    blocBC = `<tr><td class="lbl" rowspan="2">Valeur total prestation</td>
+      <td class="centre" style="font-weight:700">Quantité (${esc(d.bc.unite||"")})</td>
+      <td class="centre" style="font-weight:700">P.U</td>
+      <td class="centre" style="font-weight:700" colspan="2">Montant</td></tr>
+      <tr><td class="centre" style="font-weight:700">${F(d.bc.qte)}</td>
+      <td class="centre" style="font-weight:700">${F(d.bc.pu)}</td>
+      <td class="val-bleu" colspan="2">${F((d.bc.pu||0)*(d.bc.qte||0))}</td></tr>`;
+  } else {
+    blocBC = `<tr><td class="lbl">Valeur total prestation</td><td class="centre" colspan="4">-</td></tr>`;
+  }
+  /* corps DESIGNATIONS */
+  let lignesCorps = "";
+  const regls = (d.reglements||[]).map((r,i)=>`<tr class="ligne-grise"><td></td><td>${ord(i+1)} règlement du ${DT(r.date)}${r.mode||r.ref?` <span style="font-size:10.5px">(${r.mode}${r.ref?", "+esc(r.ref):""})</span>`:""}</td>
+      <td></td><td></td><td></td><td class="n">-${F(r.montant)}</td><td></td></tr>`).join("");
+  if(d.nature==="unique"){
+    lignesCorps = (d.lignes||[]).map((l,i)=>`<tr class="ligne-bleue"><td class="centre">${i+1}</td><td>${esc(l.designation)}</td>
+      <td class="centre">${esc(l.unite)}</td><td class="n">${F(l.pu)}</td><td class="n">${F(l.qte)}</td><td class="n">${F(l.pu*l.qte)}</td><td></td></tr>`).join("");
+    lignesCorps += regls;
+    lignesCorps += `<tr class="tot-bleu"><td class="centre">1</td><td colspan="4">Total de la demande</td><td></td><td class="n">${F(totalLignes(d))}</td></tr>`;
+    if((d.reglements||[]).length){
+      lignesCorps += `<tr class="tot-gris"><td class="centre">2</td><td colspan="4">Total soldé à ce jour</td><td></td><td class="n">-${F(totalPaye(d))}</td></tr>
+      <tr class="tot-rouge"><td></td><td colspan="4" class="centre">Montant dû</td><td></td><td class="n">${F(totalLignes(d)-totalPaye(d))}</td></tr>`;
+    }
+  } else {
+    /* cumul par prestation, comme le modèle 1B */
+    const recs = (d.receptions||[]);
+    const grp = [];
+    for(const l of recs){
+      const cle = (l.designation||"")+"|"+(l.unite||"")+"|"+(l.pu||0)+"|"+(l.ret!==false);
+      let g = grp.find(x=>x.cle===cle);
+      if(!g){ g = {cle, designation:l.designation, unite:l.unite, pu:Number(l.pu)||0, qte:0}; grp.push(g); }
+      g.qte += Number(l.qte)||0;
+    }
+    if(grp.length){
+      lignesCorps = grp.map(g=>`<tr class="ligne-bleue"><td></td><td>${esc(g.designation)}</td>
+        <td class="centre">${esc(g.unite)}</td><td class="n">${F(g.pu)}</td><td class="n">${g.qte.toLocaleString("fr-FR")}</td><td class="n">${F(g.pu*g.qte)}</td><td></td></tr>`).join("");
+    } else {
+      lignesCorps = `<tr class="ligne-bleue"><td></td><td>Avance / acompte sur prestation</td>
+        <td class="centre">${esc(d.bc?d.bc.unite:"")}</td><td class="n"></td><td class="n"></td><td class="n">${F(montantDemande(d))}</td><td></td></tr>`;
+    }
+    lignesCorps += regls;
+    lignesCorps += `<tr class="tot-bleu"><td class="centre">1</td><td colspan="4" class="centre">Total travaux réalisés à ce jour</td><td></td><td class="n">${F(grp.length?totalReceptionne(d):montantDemande(d))}</td></tr>
+    <tr class="tot-gris"><td class="centre">2</td><td colspan="4" class="centre">Total soldé à ce jour</td><td></td><td class="n">${totalPaye(d)?"-"+F(totalPaye(d)):"0"}</td></tr>`;
+    if(d.retenuePct) lignesCorps += `<tr><td class="centre" style="font-weight:700">3</td><td colspan="4" class="centre" style="font-weight:700">${esc(d.retenueLbl||"Retenue pour essai de pression")} (${d.retenuePct}%)</td><td></td><td class="n" style="font-weight:700">-${F(retenue(d))}</td></tr>`;
+    if(d.retenueRestituee) lignesCorps += `<tr class="tot-bleu"><td class="centre">4</td><td colspan="4" class="centre">Restitution de la retenue</td><td></td><td class="n">${F(d.retenueRestituee)}</td></tr>`;
+    lignesCorps += `<tr class="tot-rouge"><td></td><td colspan="4" class="centre">Montant dû à ce jour</td><td></td><td class="n">${F(grp.length?resteAPayer(d):montantDemande(d))}</td></tr>`;
+  }
+  return `<div class="fiche">
+    <div class="cartouche">
+      <img src="${LOGO}" alt="SIYO">
+      <div class="titre">${esc(meta('docTitre','DEMANDE DE DECAISSEMENT SUR BUDGET'))}</div>
+      <div class="doc">Référence : ${esc(meta('docRef','DOC-REA-001'))}<br>Revision : ${esc(meta('docRev','01'))}<br>Date création : ${esc(meta('docDate','04/01/2025'))}</div>
+    </div>
+    <table class="corps">
+      <tr><td colspan="5" class="bande-projet">${esc(ETAT.meta.entete)}</td></tr>
+      <tr><td class="lbl">Date</td><td class="centre" colspan="4" style="font-weight:700">${DT(d.dateCreation)}</td></tr>
+      <tr><td class="lbl">Objet de la demande</td><td class="val-bleu" colspan="4">${esc(d.objet)}</td></tr>
+      ${blocBC}
+      <tr><td class="lbl">Durée prévisionnelle des travaux</td><td class="val-bleu" colspan="4">${esc(d.duree||"-")}</td></tr>
+      <tr><td class="lbl">Valeur de la demande</td><td class="val-bleu" colspan="4">${F(mnt)}</td></tr>
+      <tr><td class="lbl">Acteur</td><td class="centre" colspan="4" style="font-weight:700">${esc(d.beneficiaire)}</td></tr>
+      <tr><td class="lbl">Imputation budgétaire</td><td class="centre" colspan="4">${esc(d.imputation)} — ${esc(poste(d.imputation))}</td></tr>
+      <tr><td class="lbl">Affectation</td><td class="centre" colspan="4">${esc(d.axe)}</td></tr>
+    </table>
+    <table class="corps" style="margin-top:8px">
+      <colgroup><col style="width:5%"><col style="width:40%"><col style="width:8%"><col style="width:10%"><col style="width:9%"><col style="width:14%"><col style="width:14%"></colgroup>
+      <tr><th class="col">N°</th><th class="col">DESIGNATIONS</th><th class="col">Unité</th><th class="col">Prix U.</th><th class="col">Qté</th><th class="col" colspan="2">Frais total</th></tr>
+      ${lignesCorps}
+    </table>
+    <table class="corps" style="margin-top:8px">
+      <tr class="r-espece"><td style="width:62%">MONTANT TOTAL ESPECE</td><td class="n">${FC(modes["Espèces"])}</td></tr>
+      <tr class="r-cheque"><td>MONTANT TOTAL CHEQUE</td><td class="n">${FC(modes["Chèque"])}</td></tr>
+      <tr class="r-virement"><td>MONTANT TOTAL VIREMENT</td><td class="n">${FC(modes["Virement"])}</td></tr>
+      <tr class="r-total"><td>MONTANT TOTAL</td><td class="n">${FC(mnt)}</td></tr>
+    </table>
+    ${d.obs?`<p style="font-size:11px;margin:8px 0 0"><b>Observation :</b> ${esc(d.obs)}</p>`:""}
+    <div class="sig-cadre"><div class="sigs">${sigs.map(s=>`<div>${s}</div>`).join("")}</div></div>
+    <div class="espace"></div>
+    <div class="pied"><span>${d.num}</span><span>${esc(meta('piedCentre','BUDGET PREVISIONNEL DE PROJET- REALISATION'))}</span><span>page 1 / 1</span></div>
+  </div>`;
+}
+
+/* ============================================================
+   SYNCHRONISATION GOOGLE SHEET (Phase 2)
+   ============================================================ */
+let CONNEX = null;
+try { CONNEX = JSON.parse(localStorage.getItem("siyo_connexion_azaguie")||"null"); } catch(e){}
+let PENDING = [];
+try { PENDING = JSON.parse(localStorage.getItem("siyo_pending_azaguie")||"[]"); } catch(e){}
+let syncEtat = "local", syncHeure = null, flushEnCours = false;
+function sauverPending(){ try{ localStorage.setItem("siyo_pending_azaguie", JSON.stringify(PENDING)); }catch(e){} }
+function majEtatSync(msg){
+  const el = document.getElementById("etat-sync"); if(!el) return;
+  if(!CONNEX){ el.textContent = "● Local seulement"; el.style.color = "#ffd777"; el.title = "Non connecté au Google Sheet — voir Paramètres"; return; }
+  if(syncEtat==="busy"){ el.textContent = "● Synchronisation…"; el.style.color = "#9ecbff"; }
+  else if(syncEtat==="ok" && !PENDING.length){ el.textContent = "● Connecté"+(syncHeure?" · "+syncHeure:""); el.style.color = "#7ee2a8"; el.title = "Synchronisé avec le Google Sheet"; }
+  else { el.textContent = "● Hors ligne — "+PENDING.length+" en attente"; el.style.color = "#ff9d9d"; el.title = msg||"Modifications en attente — bouton Synchroniser dès que la connexion revient"; }
+}
+function apiGet(){ return fetch(CONNEX.url+"?token="+encodeURIComponent(CONNEX.token)).then(r=>r.json()); }
+function apiPost(corps){ corps.token = CONNEX.token; return fetch(CONNEX.url, {method:"POST", body: JSON.stringify(corps)}).then(r=>r.json()); }
+function enrichir(d){ const c = JSON.parse(JSON.stringify(d)); c._montantDemande = montantDemande(d); c._totalPaye = totalPaye(d); return c; }
+function pushOp(op){
+  if(!CONNEX) return;
+  PENDING = PENDING.filter(p=>!(p.type===op.type && String(p.id)===String(op.id)));
+  PENDING.push(op); sauverPending(); flush();
+}
+async function flush(){
+  if(!CONNEX || flushEnCours || !PENDING.length){ majEtatSync(); return; }
+  flushEnCours = true; syncEtat = "busy"; majEtatSync();
+  try{
+    while(PENDING.length){
+      const op = PENDING[0];
+      let rep = null;
+      if(op.type==="demande"){
+        const d = parId(op.id);
+        if(!d){ PENDING.shift(); sauverPending(); continue; }
+        rep = await apiPost({action:"saveDemande", demande:enrichir(d), baseUpdatedAt:d.updatedAt||""});
+        if(rep && rep.ok){ d.updatedAt = rep.updatedAt; if(rep.num && rep.num!==d.num) d.num = rep.num; sauverLocal(); }
+      } else if(op.type==="delete"){
+        rep = await apiPost({action:"deleteDemande", id:op.id});
+      } else if(op.type==="params"){
+        rep = await apiPost({action:"saveParams", params:{meta:ETAT.meta, postes:ETAT.postes, axes:ETAT.axes}});
+      } else if(op.type==="all"){
+        rep = await apiPost({action:"saveAll", params:{meta:ETAT.meta, postes:ETAT.postes, axes:ETAT.axes}, demandes:ETAT.demandes.map(enrichir)});
+      }
+      if(rep && rep.conflit){
+        PENDING.shift(); sauverPending();
+        alert("⚠ "+rep.erreur+"\nLes données vont être rechargées depuis le Google Sheet.");
+        flushEnCours = false;
+        await tirer(); return;
+      }
+      if(!rep || rep.ok===false) throw new Error((rep && rep.erreur) || "pas de réponse");
+      PENDING.shift(); sauverPending();
+    }
+    syncEtat = "ok"; syncHeure = new Date().toTimeString().slice(0,5);
+  } catch(e){ syncEtat = "offline"; }
+  flushEnCours = false; majEtatSync();
+}
+async function tirer(){
+  if(!CONNEX){ alert("Pas encore connecté : Paramètres → Connexion Google Sheet."); return false; }
+  syncEtat = "busy"; majEtatSync();
+  try{
+    const rep = await apiGet();
+    if(!rep.ok) throw new Error(rep.erreur||"réponse invalide");
+    if(rep.params && rep.params.meta){ ETAT.meta = rep.params.meta; if(rep.params.postes) ETAT.postes = rep.params.postes; if(rep.params.axes) ETAT.axes = rep.params.axes; }
+    if(rep.demandes && rep.demandes.length) ETAT.demandes = rep.demandes;
+    sauverLocal(); voir(vueActive);
+    syncEtat = "ok"; syncHeure = new Date().toTimeString().slice(0,5); majEtatSync();
+    return true;
+  } catch(e){ syncEtat = "offline"; majEtatSync(String(e.message||e)); return false; }
+}
+async function synchroniser(){
+  if(!CONNEX){ alert("Pas encore connecté : Paramètres → Connexion Google Sheet."); voir("params"); return; }
+  await flush();
+  if(!PENDING.length) await tirer();
+}
+async function connecter(){
+  const url = document.getElementById("cx-url").value.trim();
+  const token = document.getElementById("cx-token").value.trim();
+  if(!url || !token){ alert("URL et clé d'accès obligatoires."); return; }
+  try{
+    const r = await fetch(url+"?token="+encodeURIComponent(token)).then(x=>x.json());
+    if(!r.ok) throw new Error(r.erreur||"accès refusé");
+    CONNEX = {url, token};
+    try{ localStorage.setItem("siyo_connexion_azaguie", JSON.stringify(CONNEX)); }catch(e){}
+    const n = r.demandes ? r.demandes.length : 0;
+    if(n > 0){
+      if(confirm(`Connexion réussie — ${n} demande(s) sur le Sheet.\nCharger le contenu du Sheet dans l'appli ?`)) await tirer();
+    } else if(ETAT.demandes.length){
+      if(confirm(`Connexion réussie — le Sheet est vide.\nEnvoyer les ${ETAT.demandes.length} demandes locales vers le Sheet (1ère mise en service) ?`)) pushOp({type:"all", id:"all"});
+    } else { alert("Connexion réussie."); }
+    syncEtat = "ok"; syncHeure = new Date().toTimeString().slice(0,5);
+    majEtatSync(); voir("params");
+  }catch(e){
+    alert("Échec de connexion : "+(e.message||e)+"\nVérifie : URL complète (…/exec), clé identique à celle du script, déploiement « Tout le monde ».");
+  }
+}
+function deconnecter(){
+  if(confirm("Se déconnecter du Google Sheet ? Les données locales restent sur ce poste.")){
+    CONNEX = null; localStorage.removeItem("siyo_connexion_azaguie");
+    majEtatSync(); voir("params");
+  }
+}
+function migrerVersSheet(){
+  if(!CONNEX){ alert("Connecte d'abord (bouton « Connecter / Tester »)."); return; }
+  if(confirm("Envoyer TOUTES les données locales vers le Sheet ? Le contenu actuel du Sheet sera remplacé.")) pushOp({type:"all", id:"all"});
+}
+
+/* démarrage */
+voir("bord");
+majEtatSync();
+(async ()=>{ if(CONNEX){ if(PENDING.length) await flush(); if(!PENDING.length) await tirer(); } })();
+</script>
+</body>
+</html>
