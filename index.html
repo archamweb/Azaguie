@@ -606,7 +606,7 @@ function ouvrirFormulaire(d){
     <div class="champ"><label>Durée prévisionnelle des travaux</label><input id="f-duree" value="${d?esc(d.duree||""):""}" placeholder="ex : 45 jours"></div>
     <div class="champ"><label>Signataires</label>
       <select id="f-interne">
-        <option value="0" ${d&&!d.interne?"selected":!d?"selected":""}>Externe : Chef Projet / Dir. Technique / Prestataire</option>
+        <option value="0" ${d&&!d.interne?"selected":!d?"selected":""}>Externe : Dir. Projet / Dir. Technique / Prestataire</option>
         <option value="1" ${d&&d.interne?"selected":""}>Interne : Dir. Projet / Dir. Technique / Dir. Général</option>
       </select></div>
   </div>
@@ -882,7 +882,7 @@ function imprimerFiche(id){
 function rendreFiche(d){
   const sigs = d.interne
     ? ["DIRECTEUR DE PROJET","DIRECTEUR TECHNIQUE","DIRECTEUR GENERAL"]
-    : ["CHEF PROJET","DIRECTEUR TECHNIQUE","PRESTATAIRE"];
+    : ["DIRECTEUR DE PROJET","DIRECTEUR TECHNIQUE","PRESTATAIRE"];
   const mnt = montantDemande(d);
   const modes = {"Espèces":0,"Chèque":0,"Virement":0};
   modes[d.modePrevu] = mnt;
