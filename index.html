@@ -500,6 +500,7 @@ function vueParams(){
     <textarea id="p-postes" rows="12" style="width:100%;font-family:Consolas,monospace;font-size:12px">${esc(ETAT.postes.map(p=>p.code+" | "+p.libelle).join("\n"))}</textarea>
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn prim" onclick="sauverParams()">Enregistrer les paramètres</button>
+      <button class="btn prim" onclick="exporterDecaissementsXlsx()">⬇ Export Décaissements (format budget V03, .xlsx)</button>
       <button class="btn" onclick="exporterCSV()">⬇ Export CSV (registre complet)</button>
       <button class="btn dngr" onclick="reinitialiser()">Réinitialiser l'appli (données de départ)</button>
     </div>
@@ -929,6 +930,205 @@ function rendreFiche(d){
     <div class="espace"></div>
     <div class="pied"><span>${d.num}</span><span>${esc(meta('piedCentre','BUDGET PREVISIONNEL DE PROJET- REALISATION'))}</span><span>page 1 / 1</span></div>
   </div>`;
+}
+
+/* ============================================================
+   EXPORT DÉCAISSEMENTS — format budget V03 (.xlsx)
+   ============================================================ */
+// Générateur .xlsx minimal (zip STORE + XML), sans librairie — testable en Node et navigateur.
+function _crc32(bytes){
+  let c, crc = 0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++){
+    c = (crc ^ bytes[i]) & 0xFF;
+    for(let k=0;k<8;k++) c = c & 1 ? (c>>>1) ^ 0xEDB88320 : c>>>1;
+    crc = (crc>>>8) ^ c;
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function _utf8(str){ return new TextEncoder().encode(str); }
+function _num2bytes(n, len){ const a=[]; for(let i=0;i<len;i++){ a.push(n & 0xFF); n>>>=8; } return a; }
+function _concat(arrs){
+  let len=0; arrs.forEach(a=>len+=a.length);
+  const out=new Uint8Array(len); let o=0;
+  arrs.forEach(a=>{ out.set(a,o); o+=a.length; });
+  return out;
+}
+function _zip(files){ // files: [{name, data:Uint8Array}]
+  const locals=[], centrals=[]; let offset=0;
+  for(const f of files){
+    const name=_utf8(f.name), crc=_crc32(f.data), sz=f.data.length;
+    const lh=_concat([ new Uint8Array([0x50,0x4b,0x03,0x04]),
+      new Uint8Array(_num2bytes(20,2)), new Uint8Array(_num2bytes(0,2)),
+      new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)),
+      new Uint8Array(_num2bytes(crc,4)), new Uint8Array(_num2bytes(sz,4)), new Uint8Array(_num2bytes(sz,4)),
+      new Uint8Array(_num2bytes(name.length,2)), new Uint8Array(_num2bytes(0,2)), name ]);
+    locals.push(lh, f.data);
+    centrals.push(_concat([ new Uint8Array([0x50,0x4b,0x01,0x02]),
+      new Uint8Array(_num2bytes(20,2)), new Uint8Array(_num2bytes(20,2)),
+      new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)),
+      new Uint8Array(_num2bytes(crc,4)), new Uint8Array(_num2bytes(sz,4)), new Uint8Array(_num2bytes(sz,4)),
+      new Uint8Array(_num2bytes(name.length,2)), new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)),
+      new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,4)),
+      new Uint8Array(_num2bytes(offset,4)), name ]));
+    offset += lh.length + f.data.length;
+  }
+  const cd=_concat(centrals);
+  const eocd=_concat([ new Uint8Array([0x50,0x4b,0x05,0x06]),
+    new Uint8Array(_num2bytes(0,2)), new Uint8Array(_num2bytes(0,2)),
+    new Uint8Array(_num2bytes(files.length,2)), new Uint8Array(_num2bytes(files.length,2)),
+    new Uint8Array(_num2bytes(cd.length,4)), new Uint8Array(_num2bytes(offset,4)), new Uint8Array(_num2bytes(0,2)) ]);
+  return _concat([_concat(locals), cd, eocd]);
+}
+function _esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c])); }
+function _serieDate(iso){ // jours depuis 1899-12-30
+  const [a,m,j]=iso.split("-").map(Number);
+  const d=Date.UTC(a,m-1,j), base=Date.UTC(1899,11,30);
+  return Math.round((d-base)/86400000);
+}
+
+const CT = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+'<Default Extension="xml" ContentType="application/xml"/>'+
+'<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+'<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+
+'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+'</Types>';
+const RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
+'</Relationships>';
+const WBRELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'+
+'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
+'</Relationships>';
+const WB = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+'<sheets><sheet name="Décaissements" sheetId="1" r:id="rId1"/></sheets></workbook>';
+const STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+'<numFmts count="1"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/></numFmts>'+
+'<fonts count="4">'+
+'<font><sz val="11"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
+'<font><b/><sz val="11"/><color rgb="FF1F4E79"/><name val="Calibri"/></font>'+
+'<font><sz val="11"/><color rgb="FF1F4E79"/><name val="Calibri"/></font>'+
+'</fonts>'+
+'<fills count="4">'+
+'<fill><patternFill patternType="none"/></fill>'+
+'<fill><patternFill patternType="gray125"/></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FF1F4E79"/></patternFill></fill>'+
+'<fill><patternFill patternType="solid"><fgColor rgb="FF2E75B6"/></patternFill></fill>'+
+'</fills>'+
+'<borders count="2"><border/>'+
+'<border><left style="thin"><color rgb="FF9CA3AF"/></left><right style="thin"><color rgb="FF9CA3AF"/></right>'+
+'<top style="thin"><color rgb="FF9CA3AF"/></top><bottom style="thin"><color rgb="FF9CA3AF"/></bottom></border></borders>'+
+'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+'<cellXfs count="10">'+
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'+                                                        // 0 défaut
+'<xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ // 1 titre
+'<xf numFmtId="0" fontId="3" fillId="0" borderId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+ // 2 sous-titre
+'<xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"/>'+                                          // 3 section
+'<xf numFmtId="0" fontId="1" fillId="3" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ // 4 entête
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+ // 5 données centré
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left"/></xf>'+   // 6 données gauche
+'<xf numFmtId="3" fontId="0" fillId="0" borderId="1" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right"/></xf>'+ // 7 montant
+'<xf numFmtId="164" fontId="0" fillId="0" borderId="1" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+ // 8 date
+'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+ // 9 texte imputation
+'</cellXfs>'+
+'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+const COL = ["A","B","C","D","E","F","G","H","I"];
+function _cell(ref, style, type, val){
+  if(val===null||val===undefined||val==="") return `<c r="${ref}" s="${style}"/>`;
+  if(type==="n") return `<c r="${ref}" s="${style}"><v>${val}</v></c>`;
+  return `<c r="${ref}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${_esc(val)}</t></is></c>`;
+}
+// lignes = [{num, designation, acteur, dateISO, montant, nature, imputation, mois, observation}]
+function construireXlsx(lignes){
+  let rows="";
+  const merge = ["A1:I1","A2:I2","A5:I5"];
+  // r1 titre
+  rows += `<row r="1" ht="28" customHeight="1">`+_cell("A1",1,"s","RÉCAPITULATIF DE TOUS LES DÉCAISSEMENTS");
+  for(let i=1;i<9;i++) rows += `<c r="${COL[i]}1" s="1"/>`; rows += `</row>`;
+  // r2 sous-titre
+  rows += `<row r="2">`+_cell("A2",2,"s","PROJET DE RENFORCEMENT DE L'ALIMENTATION EN EAU POTABLE DE LA VILLE D'ABIDJAN — DISTRIBUTION AZAGUIÉ");
+  for(let i=1;i<9;i++) rows += `<c r="${COL[i]}2" s="2"/>`; rows += `</row>`;
+  // r5 section
+  rows += `<row r="5">`+_cell("A5",3,"s","DÉTAIL DE TOUS LES DÉCAISSEMENTS")+`</row>`;
+  // r6 entête
+  const heads=["N°","Désignation","Fournisseur / Bénéficiaire","Date","Montant","Nature","Imputation","Mois","Observation"];
+  rows += `<row r="6">`+heads.map((h,i)=>_cell(COL[i]+"6",4,"s",h)).join("")+`</row>`;
+  // données
+  lignes.forEach((l,k)=>{
+    const r=7+k;
+    rows += `<row r="${r}">`+
+      _cell("A"+r,5,"n",l.num)+
+      _cell("B"+r,6,"s",l.designation)+
+      _cell("C"+r,5,"s",l.acteur)+
+      (l.dateISO ? _cell("D"+r,8,"n",_serieDate(l.dateISO)) : _cell("D"+r,5,"s",""))+
+      _cell("E"+r,7,"n",Math.round(l.montant||0))+
+      _cell("F"+r,5,"s",l.nature)+
+      _cell("G"+r,9,"s",l.imputation)+
+      _cell("H"+r,5,"s",l.mois||"")+
+      _cell("I"+r,6,"s",l.observation||"")+
+    `</row>`;
+  });
+  const dim = "A1:I"+(6+lignes.length);
+  const cols = '<cols>'+
+    '<col min="1" max="1" width="7.4" customWidth="1"/>'+
+    '<col min="2" max="3" width="33.3" customWidth="1"/>'+
+    '<col min="4" max="4" width="14.8" customWidth="1"/>'+
+    '<col min="5" max="5" width="20.3" customWidth="1"/>'+
+    '<col min="6" max="6" width="16.7" customWidth="1"/>'+
+    '<col min="7" max="8" width="14.8" customWidth="1"/>'+
+    '<col min="9" max="9" width="37" customWidth="1"/></cols>';
+  const sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    `<dimension ref="${dim}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="6" topLeftCell="A7" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>`+
+    '<sheetFormatPr defaultRowHeight="15"/>'+cols+
+    `<sheetData>${rows}</sheetData>`+
+    `<mergeCells count="${merge.length}">`+merge.map(m=>`<mergeCell ref="${m}"/>`).join("")+`</mergeCells>`+
+    '</worksheet>';
+  return _zip([
+    {name:"[Content_Types].xml", data:_utf8(CT)},
+    {name:"_rels/.rels", data:_utf8(RELS)},
+    {name:"xl/workbook.xml", data:_utf8(WB)},
+    {name:"xl/_rels/workbook.xml.rels", data:_utf8(WBRELS)},
+    {name:"xl/styles.xml", data:_utf8(STYLES)},
+    {name:"xl/worksheets/sheet1.xml", data:_utf8(sheet)},
+  ]);
+}
+
+function telechargerBin(nom, bytes, type){
+  const b = new Blob([bytes], {type});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(b); a.download = nom; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function moisLabel(iso){
+  if(!iso) return "";
+  const base = (meta("moisZero","2026-05")).split("-").map(Number);
+  const p = iso.split("-").map(Number);
+  return "Mois " + ((p[0]-base[0])*12 + (p[1]-base[1]));
+}
+function lignesDecaissement(){
+  const rows = [];
+  ETAT.demandes.forEach(d => (d.reglements||[]).forEach(r => rows.push({d, r})));
+  rows.sort((a,b) => String(a.r.date||"").localeCompare(String(b.r.date||"")));
+  return rows.map((x,i) => ({
+    num: i+1, designation: x.d.objet, acteur: x.d.beneficiaire, dateISO: x.r.date,
+    montant: x.r.montant, nature: x.r.mode, imputation: x.d.imputation,
+    mois: moisLabel(x.r.date), observation: x.r.obs || x.d.obs || ""
+  }));
+}
+function exporterDecaissementsXlsx(){
+  const lignes = lignesDecaissement();
+  if(!lignes.length){ alert("Aucun décaissement enregistré à exporter."); return; }
+  const bytes = construireXlsx(lignes);
+  telechargerBin("Decaissements-Azaguie-"+auj()+".xlsx", bytes,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 }
 
 /* ============================================================
