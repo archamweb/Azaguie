@@ -347,7 +347,10 @@ function vueBord(){
   const delaiMoy = delais.length ? Math.round(delais.reduce((a,b)=>a+b,0)/delais.length) : null;
   const resteProg = ds.filter(d=>d.nature==="progressive").reduce((s,d)=>s+Math.max(0,resteAPayer(d)),0);
   return bandeauStockage()+`
-  <h2>Tableau de bord</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <h2 style="margin:4px 0">Tableau de bord</h2>
+    <button class="btn prim" onclick="exporterDecaissementsXlsx()">⬇ Export Décaissements (format budget V03, .xlsx)</button>
+  </div>
   <div class="grille-stats">
     <div class="stat"><div class="lbl">En attente de validation</div><div class="val">${att.length}</div><div class="det">${F(totAtt)} FCFA demandés</div></div>
     <div class="stat"><div class="lbl">Validées, à décaisser</div><div class="val">${val.length}</div><div class="det">${F(totVal)} FCFA à décaisser</div></div>
@@ -500,9 +503,7 @@ function vueParams(){
     <textarea id="p-postes" rows="12" style="width:100%;font-family:Consolas,monospace;font-size:12px">${esc(ETAT.postes.map(p=>p.code+" | "+p.libelle).join("\n"))}</textarea>
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn prim" onclick="sauverParams()">Enregistrer les paramètres</button>
-      <button class="btn prim" onclick="exporterDecaissementsXlsx()">⬇ Export Décaissements (format budget V03, .xlsx)</button>
       <button class="btn" onclick="exporterCSV()">⬇ Export CSV (registre complet)</button>
-      <button class="btn dngr" onclick="reinitialiser()">Réinitialiser l'appli (données de départ)</button>
     </div>
   </div>`;
 }
