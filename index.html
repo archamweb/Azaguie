@@ -471,7 +471,7 @@ function vueParams(){
   <div class="carte">
     <h3 style="margin-top:0">Connexion Google Sheet (exploitation en ligne)</h3>
     <div class="form-grille">
-      <div class="champ"><label>URL du script Google (se termine par /exec)</label><input id="cx-url" value="${CONNEX?esc(CONNEX.url):""}" placeholder="https://script.google.com/macros/s/…/exec"></div>
+      <div class="champ"><label>URL du script Google (se termine par /exec)</label><input id="cx-url" value="${CONNEX?esc(CONNEX.url):esc(URL_DEFAUT)}" placeholder="https://script.google.com/macros/s/…/exec"></div>
       <div class="champ"><label>Clé d'accès</label><input id="cx-token" type="password" value="${CONNEX?esc(CONNEX.token):""}"></div>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
@@ -934,6 +934,7 @@ function rendreFiche(d){
 /* ============================================================
    SYNCHRONISATION GOOGLE SHEET (Phase 2)
    ============================================================ */
+const URL_DEFAUT = "https://script.google.com/macros/s/AKfycbw5ru2iHaPndQLtp7bUl7X5KMEi6-tL49iR3TtlnWxuc-5bcBJCwLy44lePIwMdLTab/exec";
 let CONNEX = null;
 try { CONNEX = JSON.parse(localStorage.getItem("siyo_connexion_azaguie")||"null"); } catch(e){}
 let PENDING = [];
@@ -1006,7 +1007,7 @@ async function synchroniser(){
   if(!PENDING.length) await tirer();
 }
 async function connecter(){
-  const url = document.getElementById("cx-url").value.trim();
+  const url = document.getElementById("cx-url").value.trim() || URL_DEFAUT;
   const token = document.getElementById("cx-token").value.trim();
   if(!url || !token){ alert("URL et clé d'accès obligatoires."); return; }
   try{
