@@ -435,8 +435,12 @@ function vueDecaissements(){
   lignes.forEach(l=>{ parMode[l.nature]=(parMode[l.nature]||0)+(Number(l.montant)||0); });
   const th = 'style="background:#2E75B6;color:#fff;text-align:center;cursor:default"';
   return bandeauStockage()+`
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-    <h2 style="margin:4px 0">Décaissements <span class="note">(${lignes.length} — total ${F(tot)} FCFA${Object.keys(parMode).length?" · "+Object.entries(parMode).map(([m,v])=>m+" : "+F(v)).join(" · "):""})</span></h2>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:6px">
+    <div>
+      <div style="font-size:12px;color:#667;font-weight:700;letter-spacing:.6px">TOTAL DÉCAISSÉ${t?" (RÉSULTAT DU FILTRE)":""}</div>
+      <div style="font-size:32px;font-weight:800;color:var(--bleu);line-height:1.15">${F(tot)} <span style="font-size:16px;font-weight:600">FCFA</span></div>
+      <div class="note">${lignes.length} décaissement(s)${Object.keys(parMode).length?" · "+Object.entries(parMode).map(([m,v])=>m+" : "+F(v)).join(" · "):""}</div>
+    </div>
     <button class="btn prim" onclick="exporterDecaissementsXlsx()">⬇ Export Décaissements (format budget V03, .xlsx)</button>
   </div>
   <div class="filtres">
@@ -457,12 +461,10 @@ function vueDecaissements(){
       <td style="text-align:center">${DT(l.dateISO)}</td>
       <td class="mont">${F(l.montant)}</td>
       <td style="text-align:center">${esc(l.nature)}</td>
-      <td style="text-align:center"><b>${esc(l.imputation)}</b><br><span class="note">${esc(poste(l.imputation))}</span></td>
+      <td style="text-align:center" title="${esc(poste(l.imputation))}"><b>${esc(l.imputation)}</b></td>
       <td style="text-align:center">${esc(l.mois||"")}</td>
       <td>${esc(l.observation||"")}</td></tr>`).join("")
       || `<tr><td colspan="9" style="text-align:center;color:#889;padding:22px">Aucun décaissement enregistré.</td></tr>`}
-    ${lignes.length?`<tr style="font-weight:700;background:#eef1f5"><td></td><td>TOTAL</td><td></td><td></td>
-      <td class="mont">${F(tot)}</td><td colspan="4"></td></tr>`:""}
     </tbody></table>
   <p class="note" style="margin-top:8px">Mêmes colonnes que la feuille « Décaissements » du budget V03 — l'export .xlsx reproduit exactement ce tableau, prêt à coller à partir de la ligne 7.</p>`;
 }
