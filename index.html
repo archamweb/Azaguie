@@ -126,6 +126,7 @@ table.lignes .tot{text-align:right;font-weight:600;padding-right:8px;white-space
   <button data-vue="bord" class="actif" onclick="voir('bord')">Tableau de bord</button>
   <button data-vue="encours" onclick="voir('encours')">Demandes en cours</button>
   <button data-vue="archives" onclick="voir('archives')">Archives</button>
+  <button data-vue="decaissements" onclick="voir('decaissements')">Décaissements</button>
   <button data-vue="acteurs" onclick="voir('acteurs')">Acteurs</button>
   <button data-vue="imputations" onclick="voir('imputations')">Imputations</button>
   <button data-vue="params" onclick="voir('params')">Paramètres</button>
@@ -273,7 +274,8 @@ function montantDemande(d){ return d.nature==="unique" ? totalLignes(d) : Math.m
 function delaiJours(d){
   if(!d.reglements||!d.reglements.length) return null;
   const dern = d.reglements[d.reglements.length-1].date;
-  return Math.round((new Date(dern) - new Date(d.dateCreation))/86400000);
+  const j = Math.round((new Date(dern) - new Date(d.dateCreation))/86400000);
+  return j < 0 ? null : j;   // négatif = demande reconfigurée après paiement : non significatif
 }
 function parId(id){ return ETAT.demandes.find(d=>d.id===id); }
 function telecharger(nom, contenu, type){
@@ -327,6 +329,7 @@ function voir(v){
   if(v==="bord") c.innerHTML = vueBord();
   else if(v==="encours") c.innerHTML = vueListe(["attente","validee"], "Demandes en cours");
   else if(v==="archives") c.innerHTML = vueListe(["archivee"], "Archives");
+  else if(v==="decaissements") c.innerHTML = vueDecaissements();
   else if(v==="acteurs") c.innerHTML = vueActeurs();
   else if(v==="imputations") c.innerHTML = vueImputations();
   else if(v==="params") c.innerHTML = vueParams();
@@ -422,6 +425,47 @@ function vueListe(statuts, titre){
 }
 function trier(t){ if(filtre.tri===t) filtre.sens*=-1; else {filtre.tri=t; filtre.sens=1;} voir(vueActive); }
 
+let filtreDec = "";
+function vueDecaissements(){
+  let lignes = lignesDecaissement();
+  const t = filtreDec.toLowerCase();
+  if(t) lignes = lignes.filter(l => (l.designation+" "+l.acteur+" "+l.imputation+" "+l.nature+" "+(l.observation||"")+" "+(l.mois||"")).toLowerCase().includes(t));
+  const tot = lignes.reduce((s,l)=>s+(Number(l.montant)||0),0);
+  const parMode = {};
+  lignes.forEach(l=>{ parMode[l.nature]=(parMode[l.nature]||0)+(Number(l.montant)||0); });
+  const th = 'style="background:#2E75B6;color:#fff;text-align:center;cursor:default"';
+  return bandeauStockage()+`
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <h2 style="margin:4px 0">Décaissements <span class="note">(${lignes.length} — total ${F(tot)} FCFA${Object.keys(parMode).length?" · "+Object.entries(parMode).map(([m,v])=>m+" : "+F(v)).join(" · "):""})</span></h2>
+    <button class="btn prim" onclick="exporterDecaissementsXlsx()">⬇ Export Décaissements (format budget V03, .xlsx)</button>
+  </div>
+  <div class="filtres">
+    <input type="text" placeholder="Rechercher (désignation, acteur, imputation, mois…)" value="${esc(filtreDec)}"
+      oninput="filtreDec=this.value; voir('decaissements'); const inp=document.querySelector('.filtres input'); inp.focus(); inp.setSelectionRange(inp.value.length,inp.value.length)">
+    <button class="btn sm" onclick="filtreDec=''; voir('decaissements')">Réinitialiser</button>
+  </div>
+  <table class="liste" style="border:1px solid #1F4E79">
+    <thead>
+      <tr><th colspan="9" style="background:#1F4E79;color:#fff;text-align:center;font-size:14px;padding:10px;cursor:default">RÉCAPITULATIF DE TOUS LES DÉCAISSEMENTS</th></tr>
+      <tr><th ${th}>N°</th><th ${th}>Désignation</th><th ${th}>Fournisseur / Bénéficiaire</th><th ${th}>Date</th>
+      <th ${th}>Montant</th><th ${th}>Nature</th><th ${th}>Imputation</th><th ${th}>Mois</th><th ${th}>Observation</th></tr>
+    </thead><tbody>
+    ${lignes.map(l=>`<tr>
+      <td class="mont" style="text-align:center">${l.num}</td>
+      <td>${esc(l.designation)}</td>
+      <td style="text-align:center">${esc(l.acteur)}</td>
+      <td style="text-align:center">${DT(l.dateISO)}</td>
+      <td class="mont">${F(l.montant)}</td>
+      <td style="text-align:center">${esc(l.nature)}</td>
+      <td style="text-align:center"><b>${esc(l.imputation)}</b><br><span class="note">${esc(poste(l.imputation))}</span></td>
+      <td style="text-align:center">${esc(l.mois||"")}</td>
+      <td>${esc(l.observation||"")}</td></tr>`).join("")
+      || `<tr><td colspan="9" style="text-align:center;color:#889;padding:22px">Aucun décaissement enregistré.</td></tr>`}
+    ${lignes.length?`<tr style="font-weight:700;background:#eef1f5"><td></td><td>TOTAL</td><td></td><td></td>
+      <td class="mont">${F(tot)}</td><td colspan="4"></td></tr>`:""}
+    </tbody></table>
+  <p class="note" style="margin-top:8px">Mêmes colonnes que la feuille « Décaissements » du budget V03 — l'export .xlsx reproduit exactement ce tableau, prêt à coller à partir de la ligne 7.</p>`;
+}
 function vueActeurs(){
   const fq = n => (n==null||isNaN(n)) ? "—" : Number(n).toLocaleString("fr-FR",{maximumFractionDigits:2}).replace(/ /g," ");
   const presta = d => (d.nature==="progressive" ? (d.bc && d.bc.designation) : "") || d.objet || "—";
