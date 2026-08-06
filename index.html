@@ -992,6 +992,12 @@ function rendreFiche(d){
     if(d.retenuePct) lignesCorps += `<tr><td class="centre" style="font-weight:700">3</td><td colspan="4" class="centre" style="font-weight:700">${esc(d.retenueLbl||"Retenue pour essai de pression")} (${d.retenuePct}%)</td><td></td><td class="n" style="font-weight:700">-${F(retenue(d))}</td></tr>`;
     if(d.retenueRestituee) lignesCorps += `<tr class="tot-bleu"><td class="centre">4</td><td colspan="4" class="centre">Restitution de la retenue</td><td></td><td class="n">${F(d.retenueRestituee)}</td></tr>`;
     lignesCorps += `<tr class="tot-rouge"><td></td><td colspan="4" class="centre">Montant dû à ce jour</td><td></td><td class="n">${F(grp.length?resteAPayer(d):montantDemande(d))}</td></tr>`;
+    const bcTot = d.bc ? (Number(d.bc.pu)||0)*(Number(d.bc.qte)||0) : 0;
+    if(bcTot > 0){
+      const resteBC = bcTot - totalPaye(d) - mnt;
+      const pctPaye = Math.round((totalPaye(d)+mnt)/bcTot*100);
+      lignesCorps += `<tr style="font-style:italic;color:#444"><td></td><td colspan="4" class="centre">Restera à payer sur la prestation après règlement de la présente demande (${pctPaye} % payé)</td><td></td><td class="n">${F(resteBC)}</td></tr>`;
+    }
   }
   return `<div class="fiche">
     <div class="cartouche">
