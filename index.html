@@ -995,8 +995,8 @@ function rendreFiche(d){
     const bcTot = d.bc ? (Number(d.bc.pu)||0)*(Number(d.bc.qte)||0) : 0;
     if(bcTot > 0){
       const resteBC = bcTot - totalPaye(d) - mnt;
-      const pctPaye = Math.round((totalPaye(d)+mnt)/bcTot*100);
-      lignesCorps += `<tr style="font-style:italic;color:#444"><td></td><td colspan="4" class="centre">Restera à payer sur la prestation après règlement de la présente demande (${pctPaye} % payé)</td><td></td><td class="n">${F(resteBC)}</td></tr>`;
+      const pctReste = Math.round(resteBC/bcTot*100);
+      lignesCorps += `<tr style="font-style:italic;color:#444"><td></td><td colspan="4" class="centre">Restera à payer sur la prestation après règlement de la présente demande (soit ${pctReste} % de la prestation)</td><td></td><td class="n">${F(resteBC)}</td></tr>`;
     }
   }
   return `<div class="fiche">
