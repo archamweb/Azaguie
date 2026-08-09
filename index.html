@@ -270,7 +270,7 @@ function baseRetenue(d){ return (d.receptions||[]).filter(l=>l.ret!==false).redu
 function retenue(d){ return baseRetenue(d) * (Number(d.retenuePct)||0)/100; }
 function ord(n){ return n===1 ? "1er" : n+"ème"; }
 function resteAPayer(d){ return totalReceptionne(d) - totalPaye(d) - retenue(d) + (Number(d.retenueRestituee)||0); }
-function montantDemande(d){ return d.nature==="unique" ? totalLignes(d) : Math.max(0, Math.round(resteAPayer(d))); }
+function montantDemande(d){ return d.nature==="unique" ? Math.max(0, Math.round(totalLignes(d)-totalPaye(d))) : Math.max(0, Math.round(resteAPayer(d))); }
 function delaiJours(d){
   if(!d.reglements||!d.reglements.length) return null;
   const dern = d.reglements[d.reglements.length-1].date;
@@ -360,7 +360,7 @@ function vueBord(){
     <div class="stat"><div class="lbl">Demandes au total</div><div class="val">${ds.length}</div><div class="det">${ds.filter(d=>d.nature==="progressive").length} progressives · ${ds.filter(d=>d.nature==="unique").length} uniques</div></div>
   </div>
   <div class="carte"><h3 style="margin-top:0">Rappels du système</h3>
-    <div class="note">• Une demande <b>unique</b> se décaisse une fois puis part aux archives (bouton « Dupliquer » pour les récurrentes : primes, caisse…).<br>
+    <div class="note">• Une demande <b>unique</b> se décaisse puis part aux archives — « <b>Dupliquer</b> » pour les récurrentes (primes, caisse…), « <b>Actualiser</b> » si son montant évolue (loyer révisé, complément) : elle repasse En attente pour le restant dû.<br>
     • Une demande <b>progressive</b> (acteur au métré) se réactualise depuis les archives : nouvelles réceptions → nouvelle demande → décaissement → retour aux archives.<br>
     • Les imputations sont la copie exacte des 78 postes du budget V03 (+ IMPREVU) : l'export CSV se recopie dans le registre du V03 sans re-saisie.<br>
     • Export hebdomadaire recommandé : bouton <b>💾 Enregistrer (JSON)</b>, à ranger dans le dossier projet.</div>
@@ -373,7 +373,7 @@ function lgnDemande(d){
   if(d.statut==="attente") actions += ` <button class="btn sm prim" onclick="valider(${d.id})">Marquer validée</button>`;
   if(d.statut==="validee") actions += ` <button class="btn sm ok" onclick="ouvrirDecaissement(${d.id})">Décaisser</button>`;
   if(d.statut==="archivee" && d.nature==="progressive") actions += ` <button class="btn sm warn" onclick="ouvrirActualisation(${d.id})">Actualiser</button>`;
-  if(d.statut==="archivee" && d.nature==="unique") actions += ` <button class="btn sm" onclick="dupliquer(${d.id})">Dupliquer</button>`;
+  if(d.statut==="archivee" && d.nature==="unique") actions += ` <button class="btn sm warn" onclick="actualiserUnique(${d.id})">Actualiser</button> <button class="btn sm" onclick="dupliquer(${d.id})">Dupliquer</button>`;
   actions += ` <button class="btn sm dngr" onclick="supprimer(${d.id})">✕</button>`;
   const mnt = d.statut==="archivee" ? totalPaye(d) : montantDemande(d);
   return `<tr>
@@ -639,8 +639,10 @@ function optionsModes(sel){ return MODES.map(m=>`<option ${m===sel?"selected":""
 let lignesTmp = [];
 let recEditTmp = [];
 let regEditTmp = [];
-function ouvrirNouvelle(){ ouvrirFormulaire(null); }
-function ouvrirEdition(id){ ouvrirFormulaire(parId(id)); }
+let reactiverId = null;
+function ouvrirNouvelle(){ reactiverId = null; ouvrirFormulaire(null); }
+function ouvrirEdition(id){ reactiverId = null; ouvrirFormulaire(parId(id)); }
+function actualiserUnique(id){ reactiverId = id; ouvrirFormulaire(parId(id)); }
 function ouvrirFormulaire(d){
   const neuf = !d;
   lignesTmp = d && d.nature==="unique" ? JSON.parse(JSON.stringify(d.lignes||[])) : (neuf ? [{designation:"",unite:"",pu:"",qte:""}] : []);
@@ -648,7 +650,8 @@ function ouvrirFormulaire(d){
   regEditTmp = d ? JSON.parse(JSON.stringify(d.reglements||[])) : [];
   const nature = d ? d.nature : "unique";
   ouvrirModale(`
-  <h2>${neuf?"Nouvelle demande":"Modifier "+d.num}</h2>
+  <h2>${neuf?"Nouvelle demande":(reactiverId===d.id?"Actualiser "+d.num:"Modifier "+d.num)}</h2>
+  ${!neuf&&reactiverId===d.id?`<p class="note">Ajuste les lignes (loyer revise, ligne supplementaire...) : a l enregistrement, la demande repassera <b>En attente</b> avec pour valeur le montant restant du (total - deja paye).</p>`:""}
   <div class="form-grille">
     <div class="champ"><label>Nature</label>
       <select id="f-nature" ${neuf?"":"disabled"} onchange="basculerNature()">
@@ -673,7 +676,7 @@ function ouvrirFormulaire(d){
   <div class="champ" style="margin-top:10px"><label>Observation</label><input id="f-obs" value="${d?esc(d.obs||""):""}"></div>
   <div class="actions">
     <button class="btn" onclick="fermerModale()">Annuler</button>
-    <button class="btn prim" onclick="enregistrerDemande(${d?d.id:"null"})">${neuf?"Créer la demande":"Enregistrer"}</button>
+    <button class="btn prim" onclick="enregistrerDemande(${d?d.id:"null"})">${neuf?"Créer la demande":(reactiverId&&d&&reactiverId===d.id?"Actualiser → En attente":"Enregistrer")}</button>
   </div>`);
   basculerNature(d);
   rendreRegEdit(neuf);
@@ -788,6 +791,12 @@ function enregistrerDemande(id){
     d.retenueLbl = g("f-ret-lbl").trim();
     d.receptions = recEditTmp.filter(l=>l.designation||Number(l.pu)||Number(l.qte))
       .map(l=>({date:l.date,designation:l.designation,unite:l.unite,pu:Number(l.pu)||0,qte:Number(l.qte)||0,ret:l.ret!==false}));
+  }
+  if(id!=null && reactiverId===id){
+    d.statut = "attente"; d.dateCreation = auj(); delete d.dateValidation;
+    reactiverId = null;
+    sauver(d); fermerModale(); voir("encours");
+    return;
   }
   sauver(d); fermerModale(); voir(vueActive==="bord"?"encours":vueActive);
 }
