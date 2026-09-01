@@ -284,7 +284,6 @@ function prochainNumero(){
   ETAT.demandes.forEach(d=>{ const m = re.exec(d.num||""); if(m) max = Math.max(max, parseInt(m[1],10)); });
   const n = Math.max(Number(ETAT.meta.prochainNum)||1, max+1);
   ETAT.meta.prochainNum = n+1;
-  if(typeof CONNEX!=="undefined" && CONNEX) pushOp({type:"params", id:"params"});
   return `D-${an}-${String(n).padStart(3,"0")}`;
 }
 function telecharger(nom, contenu, type){
@@ -1333,7 +1332,7 @@ async function flush(){
       const retirer = confirm("⚠ Le Google Sheet a REFUSÉ une modification :\n\n"+libelle+"\nMotif : "+motif+
         "\n\nOK = retirer cette modification de la file (une copie est gardée dans Paramètres → Journal des refus) et continuer.\nAnnuler = la garder en attente ; la synchronisation restera bloquée tant qu'elle n'est pas résolue.");
       if(!retirer){ erreurReseau = new Error("refusé par le script : "+motif); break; }
-      REJETS.push({quand:new Date().toISOString(), op, motif, copie:d ? JSON.parse(JSON.stringify(d)) : null});
+      REJETS.push({quand:new Date().toISOString(), op, motif, copie:copieOp(op)});
       sauverRejets();
       PENDING.shift(); sauverPending();
       continue;
@@ -1389,10 +1388,15 @@ function deconnecter(){
     majEtatSync(); voir("params");
   }
 }
+function copieOp(op){
+  if(op.type==="demande"){ const d = parId(op.id); return d ? JSON.parse(JSON.stringify(d)) : null; }
+  if(op.type==="params" || op.type==="all") return JSON.parse(JSON.stringify({meta:ETAT.meta, postes:ETAT.postes, axes:ETAT.axes}));
+  return null;
+}
 function viderFile(){
   if(!PENDING.length){ alert("La file d'attente est vide."); return; }
   if(confirm("Abandonner les "+PENDING.length+" modification(s) en attente ?\nElles seront perdues sur ce poste ; le contenu du Sheet fera foi au prochain rechargement.")){
-    PENDING.forEach(op=>{ const d = op.type==="demande" ? parId(op.id) : null; REJETS.push({quand:new Date().toISOString(), op, motif:"abandonnée manuellement", copie:d ? JSON.parse(JSON.stringify(d)) : null}); });
+    PENDING.forEach(op=>{ REJETS.push({quand:new Date().toISOString(), op, motif:"abandonnée manuellement", copie:copieOp(op)}); });
     sauverRejets(); PENDING = []; sauverPending(); majEtatSync(""); voir("params");
   }
 }
@@ -1401,7 +1405,7 @@ function exporterRejets(){ telecharger(`refus-sync-azaguie-${auj()}.json`, JSON.
 function vueSyncOutils(){
   const fmtOp = op => { const d = op.type==="demande" ? parId(op.id) : null; return esc(op.type)+(d ? " · "+esc(d.num)+" — "+esc(d.objet||"") : " · "+esc(op.id)); };
   const file = PENDING.length ? "<ul style=\"margin:6px 0 0 18px\">"+PENDING.map(op=>"<li>"+fmtOp(op)+"</li>").join("")+"</ul>" : "<span class=\"note\">aucune</span>";
-  const rej = REJETS.length ? "<ul style=\"margin:6px 0 0 18px\">"+REJETS.slice().reverse().slice(0,15).map(r=>"<li>"+esc((r.quand||"").slice(0,16).replace("T"," "))+" · "+esc(r.op&&r.op.type||"")+(r.copie?" · "+esc(r.copie.num)+" — "+esc(r.copie.objet||""):"")+" → <i>"+esc(r.motif)+"</i></li>").join("")+"</ul>" : "<span class=\"note\">aucun</span>";
+  const rej = REJETS.length ? "<ul style=\"margin:6px 0 0 18px\">"+REJETS.slice().reverse().slice(0,15).map(r=>"<li>"+esc((r.quand||"").slice(0,16).replace("T"," "))+" · "+esc(r.op&&r.op.type||"")+(r.copie&&r.copie.num?" · "+esc(r.copie.num)+" — "+esc(r.copie.objet||""):(r.copie&&r.copie.postes?" · paramètres ("+r.copie.postes.length+" postes, "+(r.copie.axes||[]).length+" axes)":""))+" → <i>"+esc(r.motif)+"</i></li>").join("")+"</ul>" : "<span class=\"note\">aucun</span>";
   return `<div class="carte">
     <h3 style="margin-top:0">État de la synchronisation</h3>
     <p><b>Dernière erreur :</b> ${syncErreur ? "<span style=\"color:var(--rouge)\">"+esc(syncErreur)+"</span>" : "<span class=\"note\">aucune</span>"}</p>
