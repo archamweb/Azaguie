@@ -278,6 +278,15 @@ function delaiJours(d){
   return j < 0 ? null : j;   // négatif = demande reconfigurée après paiement : non significatif
 }
 function parId(id){ return ETAT.demandes.find(d=>d.id===id); }
+function prochainNumero(){
+  const an = ETAT.meta.annee, re = new RegExp("^D-"+an+"-(\\d+)$");
+  let max = 0;
+  ETAT.demandes.forEach(d=>{ const m = re.exec(d.num||""); if(m) max = Math.max(max, parseInt(m[1],10)); });
+  const n = Math.max(Number(ETAT.meta.prochainNum)||1, max+1);
+  ETAT.meta.prochainNum = n+1;
+  if(typeof CONNEX!=="undefined" && CONNEX) pushOp({type:"params", id:"params"});
+  return `D-${an}-${String(n).padStart(3,"0")}`;
+}
 function telecharger(nom, contenu, type){
   const b = new Blob([contenu], {type});
   const a = document.createElement("a");
@@ -580,6 +589,7 @@ function vueParams(){
     </div>
     <p class="note">La clé d'accès reste dans CE navigateur — chaque utilisateur la saisit une fois. Ne jamais l'écrire dans le code publié sur GitHub.</p>
   </div>
+  ${vueSyncOutils()}
   <div class="carte">
     <h3 style="margin-top:0">Cartouche documentaire (modèle validé)</h3>
     <div class="form-grille">
@@ -769,8 +779,7 @@ function enregistrerDemande(id){
   if(!g("f-benef").trim()){ alert("L'acteur est obligatoire."); return; }
   let d;
   if(id==null){
-    const num = `D-${ETAT.meta.annee}-${String(ETAT.meta.prochainNum).padStart(3,"0")}`;
-    ETAT.meta.prochainNum++;
+    const num = prochainNumero();
     d = {id:Date.now(), num, nature, reglements:[], statut:"attente", retenueRestituee:0};
     ETAT.demandes.push(d);
   } else { d = parId(id); }
@@ -813,11 +822,10 @@ function supprimer(id){
 }
 function dupliquer(id){
   const s = parId(id);
-  const num = `D-${ETAT.meta.annee}-${String(ETAT.meta.prochainNum).padStart(3,"0")}`;
-  ETAT.meta.prochainNum++;
+  const num = prochainNumero();
   const c = JSON.parse(JSON.stringify(s));
   c.id = Date.now(); c.num = num; c.statut = "attente"; c.dateCreation = auj();
-  c.reglements = []; delete c.dateValidation;
+  c.reglements = []; delete c.dateValidation; delete c.updatedAt;
   ETAT.demandes.push(c); sauver(c); voir("encours");
   alert(`${num} créée à partir de ${s.num} — pense à ajuster l'objet (mois, période…).`);
 }
@@ -1250,17 +1258,40 @@ let CONNEX = null;
 try { CONNEX = JSON.parse(localStorage.getItem("siyo_connexion_azaguie")||"null"); } catch(e){}
 let PENDING = [];
 try { PENDING = JSON.parse(localStorage.getItem("siyo_pending_azaguie")||"[]"); } catch(e){}
-let syncEtat = "local", syncHeure = null, flushEnCours = false;
+let REJETS = [];
+try { REJETS = JSON.parse(localStorage.getItem("siyo_rejets_azaguie")||"[]"); } catch(e){}
+let syncEtat = "local", syncHeure = null, flushEnCours = false, syncErreur = "";
 function sauverPending(){ try{ localStorage.setItem("siyo_pending_azaguie", JSON.stringify(PENDING)); }catch(e){} }
+function sauverRejets(){ try{ localStorage.setItem("siyo_rejets_azaguie", JSON.stringify(REJETS.slice(-30))); }catch(e){} }
 function majEtatSync(msg){
+  if(msg!==undefined) syncErreur = msg ? String(msg) : "";
   const el = document.getElementById("etat-sync"); if(!el) return;
   if(!CONNEX){ el.textContent = "● Local seulement"; el.style.color = "#ffd777"; el.title = "Non connecté au Google Sheet — voir Paramètres"; return; }
-  if(syncEtat==="busy"){ el.textContent = "● Synchronisation…"; el.style.color = "#9ecbff"; }
+  if(syncEtat==="busy"){ el.textContent = "● Synchronisation…"; el.style.color = "#9ecbff"; el.title = ""; }
   else if(syncEtat==="ok" && !PENDING.length){ el.textContent = "● Connecté"+(syncHeure?" · "+syncHeure:""); el.style.color = "#7ee2a8"; el.title = "Synchronisé avec le Google Sheet"; }
-  else { el.textContent = "● Hors ligne — "+PENDING.length+" en attente"; el.style.color = "#ff9d9d"; el.title = msg||"Modifications en attente — bouton Synchroniser dès que la connexion revient"; }
+  else {
+    const court = syncErreur ? " · "+(syncErreur.length>70 ? syncErreur.slice(0,70)+"…" : syncErreur) : "";
+    el.textContent = "● Hors ligne — "+PENDING.length+" en attente"+court;
+    el.style.color = "#ff9d9d";
+    el.title = syncErreur || "Modifications en attente — bouton Synchroniser dès que la connexion revient";
+  }
 }
-function apiGet(){ return fetch(CONNEX.url+"?token="+encodeURIComponent(CONNEX.token)).then(r=>r.json()); }
-function apiPost(corps){ corps.token = CONNEX.token; return fetch(CONNEX.url, {method:"POST", body: JSON.stringify(corps)}).then(r=>r.json()); }
+/* Lit la réponse du script ; si ce n'est pas du JSON, explique pourquoi (page Google, déploiement, accès). */
+async function lireJSON(r){
+  const txt = await r.text();
+  try { return JSON.parse(txt); }
+  catch(e){
+    const url = r.url || "";
+    let motif = "le script a renvoyé une page au lieu de données";
+    if(/accounts\.google\.com/.test(url) || /accounts\.google\.com/.test(txt)) motif = "accès refusé par Google : le déploiement doit être « Qui a accès : Tout le monde »";
+    else if(/Script function not found/i.test(txt)) motif = "fonction doGet/doPost introuvable dans le script déployé";
+    else if(r.status===404 || /unable to open|introuvable/i.test(txt)) motif = "URL de déploiement invalide ou déploiement supprimé";
+    else if(/Exception|Erreur|Error/i.test(txt)) motif = "erreur d'exécution dans le script Google (voir Apps Script → Exécutions)";
+    throw new Error(motif+" [HTTP "+r.status+"]");
+  }
+}
+function apiGet(){ return fetch(CONNEX.url+"?token="+encodeURIComponent(CONNEX.token)).then(lireJSON); }
+function apiPost(corps){ corps.token = CONNEX.token; return fetch(CONNEX.url, {method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify(corps)}).then(lireJSON); }
 function enrichir(d){ const c = JSON.parse(JSON.stringify(d)); c._montantDemande = montantDemande(d); c._totalPaye = totalPaye(d); return c; }
 function pushOp(op){
   if(!CONNEX) return;
@@ -1269,11 +1300,12 @@ function pushOp(op){
 }
 async function flush(){
   if(!CONNEX || flushEnCours || !PENDING.length){ majEtatSync(); return; }
-  flushEnCours = true; syncEtat = "busy"; majEtatSync();
-  try{
-    while(PENDING.length){
-      const op = PENDING[0];
-      let rep = null;
+  flushEnCours = true; syncEtat = "busy"; majEtatSync("");
+  let erreurReseau = null;
+  while(PENDING.length){
+    const op = PENDING[0];
+    let rep = null;
+    try{
       if(op.type==="demande"){
         const d = parId(op.id);
         if(!d){ PENDING.shift(); sauverPending(); continue; }
@@ -1285,19 +1317,32 @@ async function flush(){
         rep = await apiPost({action:"saveParams", params:{meta:ETAT.meta, postes:ETAT.postes, axes:ETAT.axes}});
       } else if(op.type==="all"){
         rep = await apiPost({action:"saveAll", params:{meta:ETAT.meta, postes:ETAT.postes, axes:ETAT.axes}, demandes:ETAT.demandes.map(enrichir)});
-      }
-      if(rep && rep.conflit){
-        PENDING.shift(); sauverPending();
-        alert("⚠ "+rep.erreur+"\nLes données vont être rechargées depuis le Google Sheet.");
-        flushEnCours = false;
-        await tirer(); return;
-      }
-      if(!rep || rep.ok===false) throw new Error((rep && rep.erreur) || "pas de réponse");
+      } else { PENDING.shift(); sauverPending(); continue; }
+    } catch(e){ erreurReseau = e; break; }   /* réseau coupé ou réponse illisible : on garde l'op, on réessaiera */
+    if(rep && rep.conflit){
       PENDING.shift(); sauverPending();
+      alert("⚠ "+rep.erreur+"\nLes données vont être rechargées depuis le Google Sheet.");
+      flushEnCours = false;
+      await tirer(); return;
     }
-    syncEtat = "ok"; syncHeure = new Date().toTimeString().slice(0,5);
-  } catch(e){ syncEtat = "offline"; }
-  flushEnCours = false; majEtatSync();
+    if(!rep || rep.ok===false){
+      /* Refus du serveur : cette modification ne passera jamais telle quelle. On l'explique et on laisse choisir. */
+      const motif = (rep && rep.erreur) || "réponse vide du script";
+      const d = op.type==="demande" ? parId(op.id) : null;
+      const libelle = op.type+(d ? " "+d.num+" — "+(d.objet||"") : " "+op.id);
+      const retirer = confirm("⚠ Le Google Sheet a REFUSÉ une modification :\n\n"+libelle+"\nMotif : "+motif+
+        "\n\nOK = retirer cette modification de la file (une copie est gardée dans Paramètres → Journal des refus) et continuer.\nAnnuler = la garder en attente ; la synchronisation restera bloquée tant qu'elle n'est pas résolue.");
+      if(!retirer){ erreurReseau = new Error("refusé par le script : "+motif); break; }
+      REJETS.push({quand:new Date().toISOString(), op, motif, copie:d ? JSON.parse(JSON.stringify(d)) : null});
+      sauverRejets();
+      PENDING.shift(); sauverPending();
+      continue;
+    }
+    PENDING.shift(); sauverPending();
+  }
+  flushEnCours = false;
+  if(erreurReseau){ syncEtat = "offline"; majEtatSync(String(erreurReseau.message||erreurReseau)); return; }
+  syncEtat = "ok"; syncHeure = new Date().toTimeString().slice(0,5); majEtatSync("");
 }
 async function tirer(){
   if(!CONNEX){ alert("Pas encore connecté : Paramètres → Connexion Google Sheet."); return false; }
@@ -1308,7 +1353,7 @@ async function tirer(){
     if(rep.params && rep.params.meta){ ETAT.meta = rep.params.meta; if(rep.params.postes) ETAT.postes = rep.params.postes; if(rep.params.axes) ETAT.axes = rep.params.axes; }
     if(rep.demandes && rep.demandes.length) ETAT.demandes = rep.demandes;
     sauverLocal(); voir(vueActive);
-    syncEtat = "ok"; syncHeure = new Date().toTimeString().slice(0,5); majEtatSync();
+    syncEtat = "ok"; syncHeure = new Date().toTimeString().slice(0,5); majEtatSync("");
     return true;
   } catch(e){ syncEtat = "offline"; majEtatSync(String(e.message||e)); return false; }
 }
@@ -1322,8 +1367,8 @@ async function connecter(){
   const token = document.getElementById("cx-token").value.trim();
   if(!url || !token){ alert("URL et clé d'accès obligatoires."); return; }
   try{
-    const r = await fetch(url+"?token="+encodeURIComponent(token)).then(x=>x.json());
-    if(!r.ok) throw new Error(r.erreur||"accès refusé");
+    const r = await fetch(url+"?token="+encodeURIComponent(token)).then(lireJSON);
+    if(!r.ok) throw new Error(r.erreur||"accès refusé (clé incorrecte ?)");
     CONNEX = {url, token};
     try{ localStorage.setItem("siyo_connexion_azaguie", JSON.stringify(CONNEX)); }catch(e){}
     const n = r.demandes ? r.demandes.length : 0;
@@ -1343,6 +1388,32 @@ function deconnecter(){
     CONNEX = null; localStorage.removeItem("siyo_connexion_azaguie");
     majEtatSync(); voir("params");
   }
+}
+function viderFile(){
+  if(!PENDING.length){ alert("La file d'attente est vide."); return; }
+  if(confirm("Abandonner les "+PENDING.length+" modification(s) en attente ?\nElles seront perdues sur ce poste ; le contenu du Sheet fera foi au prochain rechargement.")){
+    PENDING.forEach(op=>{ const d = op.type==="demande" ? parId(op.id) : null; REJETS.push({quand:new Date().toISOString(), op, motif:"abandonnée manuellement", copie:d ? JSON.parse(JSON.stringify(d)) : null}); });
+    sauverRejets(); PENDING = []; sauverPending(); majEtatSync(""); voir("params");
+  }
+}
+function effacerRejets(){ if(confirm("Effacer le journal des refus ?")){ REJETS = []; sauverRejets(); voir("params"); } }
+function exporterRejets(){ telecharger(`refus-sync-azaguie-${auj()}.json`, JSON.stringify(REJETS, null, 1), "application/json"); }
+function vueSyncOutils(){
+  const fmtOp = op => { const d = op.type==="demande" ? parId(op.id) : null; return esc(op.type)+(d ? " · "+esc(d.num)+" — "+esc(d.objet||"") : " · "+esc(op.id)); };
+  const file = PENDING.length ? "<ul style=\"margin:6px 0 0 18px\">"+PENDING.map(op=>"<li>"+fmtOp(op)+"</li>").join("")+"</ul>" : "<span class=\"note\">aucune</span>";
+  const rej = REJETS.length ? "<ul style=\"margin:6px 0 0 18px\">"+REJETS.slice().reverse().slice(0,15).map(r=>"<li>"+esc((r.quand||"").slice(0,16).replace("T"," "))+" · "+esc(r.op&&r.op.type||"")+(r.copie?" · "+esc(r.copie.num)+" — "+esc(r.copie.objet||""):"")+" → <i>"+esc(r.motif)+"</i></li>").join("")+"</ul>" : "<span class=\"note\">aucun</span>";
+  return `<div class="carte">
+    <h3 style="margin-top:0">État de la synchronisation</h3>
+    <p><b>Dernière erreur :</b> ${syncErreur ? "<span style=\"color:var(--rouge)\">"+esc(syncErreur)+"</span>" : "<span class=\"note\">aucune</span>"}</p>
+    <p><b>Modifications en attente d'envoi (${PENDING.length})</b></p>${file}
+    <p style="margin-top:12px"><b>Journal des refus (${REJETS.length})</b> — modifications rejetées par le Sheet ou abandonnées, avec copie de la demande telle qu'elle était.</p>${rej}
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="synchroniser()">🔄 Réessayer la synchronisation</button>
+      <button class="btn dngr" onclick="viderFile()">Vider la file d'attente</button>
+      <button class="btn" onclick="exporterRejets()">Exporter le journal (JSON)</button>
+      <button class="btn" onclick="effacerRejets()">Effacer le journal</button>
+    </div>
+  </div>`;
 }
 function migrerVersSheet(){
   if(!CONNEX){ alert("Connecte d'abord (bouton « Connecter / Tester »)."); return; }
